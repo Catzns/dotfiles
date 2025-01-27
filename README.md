@@ -1,2 +1,1 @@
-# dotfiles
-My dotfiles, and scripts to manage them.
+All my configurations, and scripts to manage them. Copy anything you find comfortable!
