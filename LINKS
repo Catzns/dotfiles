@@ -1,0 +1,7 @@
+
+kakrc	~/.config/kak/kakrc
+wezterm.lua	~/.wezterm.lua
+starship.toml	~/.config/starship.toml
+config.fish	~/.config/fish/config.fish
+btop.conf	~/.config/btop/btop.conf
+hyprland.conf	~/.config/hypr/hyprland.conf

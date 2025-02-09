@@ -11,6 +11,7 @@ if [[ $# != 1 ]] then
 	usage
 fi
 
+# Intermediary variables
 dotfiles_dir=$(dirname $(realpath "$0"))
 link_name="$1"
 link_dir=$(grep -wm 1 "^$link_name	" "$dotfiles_dir/LINKS" || printf "%s" "")

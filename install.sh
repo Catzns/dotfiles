@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+read -p "This will symlink every .dotfile listed in the LINKS file. Proceed? (Y\N) " resp
+if [[ $resp != [Yy]* ]] then
+	exit 1
+fi
+
 dotfiles_dir=$(dirname $(realpath $0))
 
 while read -r entry; do
