@@ -1,4 +1,5 @@
 function fish_greeting
+	sleep .01
 	fastfetch
 end
 

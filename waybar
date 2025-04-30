@@ -1,0 +1,173 @@
+{
+  "height": 24,
+  "spacing": 22,
+  "margin-left": 1,
+  "margin-right": 1,
+  "margin-bottom": 2,
+
+  "modules-left": ["group/apps", "hyprland/workspaces"],
+  "modules-center": ["clock#date", "idle_inhibitor", "clock#time"],
+  "modules-right": ["privacy", "tray", "group/audio", "group/measurement", "custom/notification", "group/power"],
+
+  "custom/appsbtn": {
+    "format": "󰀻<sub> </sub>",
+    "tooltip": false,
+    "on-click": "rofi -show drun -config desktop -run-command 'uwsm-app -- {cmd}'",
+  },
+  "custom/apps": {
+    "format": "Programs",
+    "tooltip": false,
+    "on-click": "rofi -show drun -config desktop -run-command 'uwsm-app -- {cmd}'",
+  },
+  "group/apps": {
+    "orientation": "horizontal",
+    "modules": ["custom/appsbtn", "custom/apps"],
+    "drawer": {
+      "transition-left-to-right": true,
+      "transition-duration": 250,
+    },
+  },
+
+  "hyprland/workspaces": {
+    "format": "{icon} {windows}",
+    "format-icons": {
+      "active": "󰐾",
+      "visible": "󰐾",
+    },
+    "persistent-workspaces": {
+      "*": [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    },
+    "window-rewrite": {
+      "title<>": "",
+      "title<.*youtube —.*": "<sub> </sub>",
+      "class<footclient>": "󰽒",
+      "class<firefox>": "󰈹<sub> </sub>",
+      "class<discord>": "<sub> </sub>",
+      "class<thunar>": "<sub> </sub>",
+      "class<hyprpolkitagent>": "󰟵<sub> </sub>",
+      "class<.*pavucontrol>": "<sub> </sub>",
+      "class<steam_app.*>": "󰮂<sub> </sub>",
+      "class<steam>": "<sub> </sub>",
+      "class<steam> title<.*Friends List.*>": "<sub> </sub>", 
+    },
+    "window-rewrite-default": "󰣆<sub> </sub>",
+    "cursor": true, 
+  },
+
+  "tray": {
+    "icon-size": 22,
+    "spacing": 6,
+    "show-passive-items": true,
+    "cursor": true,
+  },
+
+  "privacy": {
+    "icon-spacing": 6,
+    "icon-size": 17,
+  },
+
+  "clock#date": {
+    "format": "{:%a, %b %d}",
+    "tooltip": false,
+  },
+  "idle_inhibitor": {
+    "format": "{icon}",
+    "format-icons": {
+      "activated": "󰮔<sub> </sub>",
+      "deactivated": "<sub> </sub>",
+    },
+    "timeout": 10800,
+    "tooltip": false,
+  },
+  "clock#time": {
+    "format": "{:%I:%M %p}",
+    "tooltip": false,
+  },
+
+  "pulseaudio/slider": {
+    "min": 0,
+    "max": 100,
+    "scroll-step": 5,
+    "orientation": "horizontal",
+  },
+  "wireplumber": {
+    "format": "󰋋<sub> </sub>{volume:02}",
+    "format-muted": "󰟎<sub> </sub>{volume}",
+    "max-volume": 100,
+    "scroll-step": 5.0,
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "tooltip": false,
+  },
+  "group/audio": {
+    "modules": ["pulseaudio/slider", "wireplumber",],
+    "orientation": "inherit",
+  },
+
+  "memory": {
+    "format": " {used:0.1f}/{total:0.0f}G",
+    "interval": 4,
+    "tooltip": false,
+  },
+  "temperature": {
+    "format": "{temperatureC}<sup>󰔄</sup>",
+    "interval": 4,
+    "tooltip": false,
+  },
+  "custom/nvidia": {
+    "exec": "nvidia-smi --query-gpu temperature.gpu --format=csv,noheader",
+    "interval": 4,
+    "format": "{}<sup>󰔄</sup>",
+    "tooltip": false,
+  },
+  "custom/pacman": {
+    "exec": "while pidof -x checkupdates > /dev/null; do :; done; checkupdates | wc -l",
+    "interval": 3600,
+    "format": "󰮯<sub> </sub>{}",
+    "tooltip": false,
+  },
+  "group/measurement": {
+    "modules": ["memory", "temperature", "custom/nvidia", "custom/pacman"],
+    "orientation": "inherit",
+  },
+
+  "custom/notification": {
+    "tooltip": false,
+    "format": "{icon}",
+    "format-icons": {
+      "notification": "󰂚<sup> </sup>",
+      "none": "󰂚<sup> </sup>",
+      "dnd-notification": "󰂛<sup> </sup>",
+      "dnd-none": "󰂛<sup> </sup>",
+      "inhibited-notification": "󰂚<sup> </sup>",
+      "inhibited-none": "󰂚<sup> </sup>",
+      "dnd-inhibited-notification": "󰂛<sup> </sup>",
+      "dnd-inhibited-none": "󰂛<sup> </sup>"
+    },
+    "return-type": "json",
+    "exec-if": "which swaync-client",
+    "exec": "swaync-client -swb",
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
+  },
+
+  "custom/power": {
+    "format": "Power",
+    "tooltip": false,
+    "on-click": "rofi -show power -modes power -config power",
+  },
+  "custom/powerbtn": {
+    "format": "⏻<sub> </sub>",
+    "tooltip": false,
+    "on-click": "rofi -show power -modes power -config power",
+  },
+  "group/power": {
+    "orientation": "horizontal",
+    "modules": ["custom/powerbtn", "custom/power",],
+    "drawer": {
+      "transition-left-to-right": false,
+      "transition-duration": 250,
+    },
+  },
+},

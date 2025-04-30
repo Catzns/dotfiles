@@ -8,9 +8,6 @@ local config = wezterm.config_builder()
 
 -- For example, changing the color scheme:
 
-config.unix_domains = {{name = 'catzs'}}
-config.default_gui_startup_args = { 'connect', 'catzs' }
-
 config.color_scheme = 'tokyonight'
 config.font_size = 13.0
 

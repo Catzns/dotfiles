@@ -1,0 +1,312 @@
+@define-color background rgba(26, 27, 38, 0.97);
+@define-color stormbg rgba(36, 40, 59, 0.97);
+@define-color lightbg rgba(86, 95, 137, 0.97);
+@define-color foreground #c0caf5;
+@define-color darkfg #343b58;
+@define-color border rgba(65, 72, 104, 0.8);
+@define-color red #f7768e;
+@define-color orange #ff9e64;
+@define-color yellow #e0af68;
+@define-color green #9ece6a;
+@define-color blue #7aa2f7;
+@define-color cyan #7dcfff;
+@define-color purple #bb9af7;
+@define-color tan #cfc9c2;
+
+* {
+    background: transparent;
+    font-family: FontAwesome, JetBrainsMono NF ExtraBold;
+    font-weight: 600;
+    font-size: 16px;
+    text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.5);
+    padding: 0;
+}
+
+window#waybar {
+    background: linear-gradient(0deg, @stormbg, @background);
+    color: @foreground;
+    border-radius: 4px 4px 6px 6px;
+    border: 2px solid @border;
+    border-top: 0px;
+}
+
+#apps {
+    background: @border;
+    color: @cyan;
+    border-radius: 3px 6px 3px 6px;
+    transition: background 125ms;
+}
+
+#apps:hover {
+    background: @lightbg;
+}
+
+#custom-apps {
+    padding-right: 10px;
+}
+
+#custom-appsbtn {
+    padding: 0px 6px 0px 10px;
+}
+
+#workspaces button {
+    background: @border;
+    color: @tan;
+    border-radius: 6px 6px 3px 3px;
+    padding: 0px 10px 0px 10px;
+    margin: 0px 6px 0px 0px;
+
+    transition: background 125ms;
+}
+
+#workspaces button:hover {
+    background: @lightbg;
+    box-shadow: inherit;
+}
+
+#workspaces button.visible {
+    color: @blue;
+}
+
+#workspaces button.active {
+    background: linear-gradient(-10deg, @cyan, @blue);
+    color: @darkfg;
+}
+
+#workspaces button.active label {
+    text-shadow: none;
+}
+
+#workspaces button.urgent {
+    color: @red;
+}
+
+#workspaces button.empty {
+    padding-right: 0px;
+}
+
+#workspaces button.empty.visible {
+    padding: 0px 2px 0px 8px;
+}
+
+#tray image {
+    background: @border;
+    border-radius: 6px 6px 3px 3px;
+    padding: 0px 6px 2px;
+    transition: background 125ms;
+}
+
+#tray widget:hover image {
+   background: @lightbg;
+}
+
+#tray > .needs-attention {
+    background: @red;
+}
+
+#tray menu {
+    background: @background;
+    border: 2px solid @border;
+    border-radius: 6px;
+    padding: 4px 0px;
+}
+
+#tray menu label {
+    font-family: Inter;
+    color: @foreground;
+    padding: 2px 0px;
+}
+
+#tray menu image {
+    margin-right: 10px;
+    padding: 2px 4px;
+    border-radius: 6px;
+    -gtk-icon-effect: none;
+}
+
+#tray menu menuitem {
+    border-radius: 2px;
+    margin: 0px 1px;
+    transition-duration: 0ms;
+}
+
+#tray menu menuitem:hover {
+    color: white;
+    background: @lightbg;
+}
+
+#tray arrow {
+    color: @foreground;
+}
+
+#tray menuitem check {
+    margin-left: 5px;
+    background: @foreground;
+}
+
+#tray separator {
+    border-bottom: 2px solid @border;
+    margin: 0px 8px;
+}
+
+#privacy-item {
+    color: @darkfg;
+    background: linear-gradient(0deg, @orange, @yellow);
+    padding: 0px 6px;
+    border-radius: 6px 6px 3px 3px;
+}
+
+#clock.time {
+    padding-left: 6px;
+    margin-bottom: 2px;
+}
+
+#idle_inhibitor {
+    background: @border;
+    border-radius: 6px 6px 3px 3px;
+    font-size: 17.5px;
+    padding: 0px 5px;
+    transition: background 125ms;
+}
+
+#idle_inhibitor:hover {
+    background: @lightbg;
+}
+
+#idle_inhibitor.activated {
+    padding-left: 6px;
+    padding-right: 4px;
+}
+
+#clock.date {
+    padding-right: 5px;
+    margin-bottom: 2px;
+}
+
+.modules-center {
+    margin-right: 30px;
+}
+
+#audio {
+    background: @border;
+    border-radius: 6px 6px 3px 3px;
+}
+
+#pulseaudio-slider {
+    min-width: 100px;
+    min-height: 4px;
+    padding: 0px 9px 0px 10px;
+}
+
+#pulseaudio-slider slider {
+    background: @darkfg;
+    min-width: 0px;
+    min-height: 0px;
+    box-shadow: inset 0px 0px 1px 2px @purple;
+}
+
+#pulseaudio-slider slider:hover {
+    box-shadow: inset 0px 0px 0px 4px @purple;
+}
+
+#pulseaudio-slider trough {
+    background: @stormbg;
+    border: 2px solid @lightbg;
+    border-radius: 4px;
+}
+
+#pulseaudio-slider highlight {
+    background: @purple;
+    border-radius: 2px;
+    padding: 2px;
+}
+
+#wireplumber {
+    color: @purple;
+    padding: 0px 6px;
+    border-radius: 6px 6px 3px 3px;
+    min-width: 46px;
+    transition: background 125ms;
+}
+
+#wireplumber:hover {
+    background: @lightbg;
+}
+
+#measurement {
+    margin-bottom: 2px;
+}
+
+#memory {
+    color: @blue;
+    padding-right: 6px;
+}
+
+#temperature {
+    color: @cyan;
+    padding: 0px 6px;
+}
+
+#custom-nvidia {
+    color: @green;
+    padding: 0px 6px;
+}
+
+#custom-pacman {
+    color: @yellow;
+    padding-left: 6px;
+}
+
+#custom-notification {
+    background: @border;
+    color: @orange;
+    padding: 0px 6px 0px 10px;
+    border-radius: 6px 6px 3px 3px;
+    transition: background 125ms;
+}
+
+#custom-notification.dnd-none, #custom-notification.dnd-notification, #custom-notification.dnd-inhibited-none, #custom-notification.dnd-inhibited-notification {
+    padding: 0px 7px 0px 9px;
+}
+
+#custom-notification:hover {
+    background: @lightbg;
+}
+
+#custom-notification.notification {
+    background: linear-gradient(0deg, @orange, @yellow);
+    color: @darkfg;
+    text-shadow: none;
+}
+
+#custom-notification.notification:hover {
+    background: linear-gradient(0deg, #ffbd96, #e0c294);
+}
+
+#power {
+    background: @border;
+    color: @red;
+    border-radius: 6px 3px 6px 3px;
+    transition: background 125ms;
+}
+
+#power:hover {
+    background: @lightbg;
+}
+
+#custom-power {
+    padding-left: 10px;
+}
+
+#custom-powerbtn {
+    padding: 0px 7px 0px 10px;
+}
+
+tooltip label {
+    font-family: Inter;
+    color: @foreground;
+    background: @background;
+    border: 2px solid @border;
+    border-radius: 6px;
+    padding: 2px 6px;
+}

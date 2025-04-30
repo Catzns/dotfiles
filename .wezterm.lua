@@ -1,0 +1,1 @@
+/home/Catzs/.wezterm.lua
