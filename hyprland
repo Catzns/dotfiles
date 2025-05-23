@@ -16,10 +16,11 @@ monitor = , preferred, auto, 1
 # See https://wiki.hyprland.org/Configuring/Keywords/
 
 $terminal = footclient.desktop
-$power = rofi -show power -config power -mode power
+$power = rofi -show power -theme power -mode power
 $files = thunar.desktop
-$menu = rofi -show drun -config desktop -run-command "uwsm-app -- {cmd}"
-$emoji = rofimoji --selector-args "-config emoji"
+$menu = rofi -show drun -theme desktop -run-command "uwsm-app -- {cmd}"
+$emoji = rofimoji --selector-args "-theme emoji"
+$texteditor = emacsclient -n -r
 
 
 #################
@@ -32,10 +33,9 @@ exec-once = systemctl --user start wayland-wm-app-daemon.service
 exec-once = systemctl --user start hypridle.service
 exec-once = systemctl --user start gammastep.service
 exec-once = systemctl --user start thunar.service
-exec-once = systemctl --user start waybar.service
 exec-once = systemctl --user start swaync.service
 exec-once = hyprctl dispatch workspace 1
-exec-once = uwsm-app -- hyprlock
+exec-once = uwsm-app -- hyprlock; systemctl --user start waybar.service
 
 #############################
 ### ENVIRONMENT VARIABLES ###
@@ -144,7 +144,7 @@ misc {
     disable_hyprland_logo = false # If true disables the random hyprland logo / anime girl background. :(
     font_family = Inter
     enable_swallow = true
-    swallow_regex = ^(footclient)$
+    swallow_regex = ^(footclient)|(Thunar)$
 }
 
 
@@ -219,6 +219,7 @@ $mainMod = SUPER # Sets "Windows" key as main modifier
 
 bindd = $mainMod, Escape, Log Out, exec, loginctl terminate-user ""
 bindd = $mainMod, q, Quit, exec, $power
+bindd = $mainMod, w, Write, exec, uwsm-app -- $texteditor
 bindd = $mainMod, e, Emoji, exec, $emoji
 bindd = $mainMod, a, Application, exec, $menu
 bindd = $mainMod, s, Swap, togglesplit
@@ -312,7 +313,7 @@ bindl = , XF86AudioPlay, exec, playerctl play-pause
 bindl = , XF86AudioPrev, exec, playerctl previous
 
 # Screenshot with Grim, Slurp, Swappy & Hyprpicker
-bind = , Print, exec, hyprpicker -r -z & sleep 0.001; grim -g "$(slurp -d)" - | (swappy -f - &); pkill hyprpicker
+bind = , Print, exec, hyprpicker -r -z & sleep 0.05; grim -g "$(slurp -d)" - | (swappy -f - &); pkill hyprpicker
 
 ##############################
 ### WINDOWS AND WORKSPACES ###

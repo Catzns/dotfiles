@@ -1,0 +1,103 @@
+configuration {
+    display-drun: "   Programs: ";
+    drun-display-format: "{name}";
+    show-icons: true;
+}
+
+* {
+    background-color: transparent; 
+    text-color: @foreground;
+    padding: 0;
+}
+
+window {
+    font: "JetBrainsMono Nerd Font Normal 16";
+    background-color: @overlay;
+    fullscreen: true;
+}
+
+mainbox {
+    background-color: @background;
+    margin: calc(50% - 28.4ch) calc(50% - 25ch);
+    border: 2;
+    border-radius: 6;
+    border-color: @border;
+}
+
+inputbar {
+    background-color: @activebg;
+    border: 0 0 4px;
+    border-color: @lightbg;
+    border-radius: 6px;
+    margin: 2ch 2ch 0;
+    padding: 1ch 1ch 0.5ch;
+    spacing: 0;
+    cursor: text;
+}
+
+prompt {
+    text-color: @lightfg;
+    cursor: inherit;
+}
+
+case-indicator {
+    cursor: inherit;
+}
+
+entry {
+    text-color: @lightfg;
+    padding: 0 0 calc(0.5ch - 2px);
+    border: 0 0 2px dash;
+    border-color: @foreground;
+    cursor: inherit;
+}
+
+listview {
+    scrollbar: true;
+    flow: horizontal;
+    columns: 3;
+    margin: 2ch 0.5ch 2ch 2ch;
+    spacing: 1ch;
+    fixed-columns: true;
+}
+
+scrollbar {
+    background-color: @lightbg;
+    handle-width: 0.5ch;
+    handle-color: @scroll;
+    border-radius: 100%;
+}
+
+handle {
+    border-radius: 100%;
+}
+
+element {
+    background-color: @lightbg;
+    border: 0 0 4px;
+    border-color: @lightbg;
+    border-radius: 6;
+    orientation: vertical;
+    padding: 2.5ch 1ch 0;
+    cursor: pointer;
+}
+
+element.selected {
+    background-color: @activebg;
+}
+
+element-text {
+    padding: 0.5ch 0 2ch;
+    horizontal-align: 0.5;
+    cursor: inherit;
+}
+
+element-text.selected {
+    text-color: @lightfg;
+}
+
+element-icon {
+    size: 7ch;
+    cursor: inherit;
+}
+@import "tokyonight"

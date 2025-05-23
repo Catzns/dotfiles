@@ -1,0 +1,68 @@
+* {
+    background-color: transparent; 
+    text-color: @lightfg;
+    padding: 0;
+}
+
+window {
+    font: "JetBrainsMono NF Normal 16";
+    background-color: @overlay;
+    fullscreen: true;
+}
+
+mainbox {
+    background-color: @background;
+    margin: calc(50% - 11ch) calc(50% - 25ch);
+    border: 2;
+    border-radius: 6;
+    border-color: @border;
+}
+
+inputbar {
+    background-color: @activebg;
+    border: 0 0 4px;
+    border-color: @lightbg;
+    border-radius: 6px;
+    margin: 1ch 17.3ch 0;
+    padding: 0.5ch 1ch 0.5ch;
+    children: [prompt];
+}
+
+listview {
+    flow: horizontal;
+    columns: 3;
+    margin: 1ch 1.5ch;
+    spacing: 1.5ch;
+    fixed-columns: true;
+}
+
+element {
+    background-color: @lightbg;
+    text-color: @lightfg;
+    border: 0 0 4px;
+    border-color: @lightbg;
+    border-radius: 6;
+    padding: 1ch 0ch;
+    cursor: pointer;
+}
+
+element.selected {
+    background-color: @activebg;
+}
+
+element-text {
+    font: "Font Awesome 6 Free Normal 120";
+    text-color: @purple;
+    horizontal-align: 0.5;
+    vertical-align: 0.5;
+    cursor: inherit;
+}
+
+element-text.active {
+    text-color: @green;
+}
+
+element-text.urgent {
+    text-color: @red;
+}
+@import "tokyonight"

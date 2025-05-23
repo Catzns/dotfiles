@@ -6,14 +6,14 @@ general {
 
 listener {
     timeout = 120
-    on-timeout = ddcutil setvcp 10 0 -d 1; ddcutil setvcp 10 0 -d 2
-    on-resume = ddcutil setvcp 10 75 -d 1; ddcutil setvcp 10 75 -d 2
+    on-timeout = hyprsunset -i -g 50%
+    on-resume = pkill hyprsunset
 }
 
 listener {
     timeout = 300
     on-timeout = hyprctl dispatch dpms off
-    on-resume = ddcutil setvcp 10 75 -d 1; ddcutil setvcp 10 75 -d 2; hyprctl dispatch dpms on;
+    on-resume = hyprctl dispatch dpms on; systemctl --user restart waybar.service
 }
 
 listener {

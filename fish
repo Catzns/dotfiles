@@ -6,6 +6,8 @@ end
 if status is-interactive
     # Commands to run in interactive sessions can go here
     starship init fish | source
+    fish_vi_key_bindings insert
+    fish_add_path ~/.config/emacs/bin
 end
 
 function y
