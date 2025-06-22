@@ -9,7 +9,7 @@
 (setq doom-font (font-spec :family "JetBrains Mono" :size 13.0)
       doom-big-font (font-spec :family "JetBrains Mono" :size 20.0)
       doom-symbol-font (font-spec :family "Symbols Nerd Font" :size 13.0)
-      doom-variable-pitch-font (font-spec :family "Caladea" :size 15.0)
+      doom-variable-pitch-font (font-spec :family "Iosevka Etoile" :size 13.0)
       doom-serif-font (font-spec :family "GoMono Nerd Font" :size 13.0))
 
 (setq browse-url-browser-function 'browse-url-generic)
@@ -17,6 +17,7 @@
 
 (map! :n "U" 'evil-redo)
 
+(add-hook! (org-mode) (auto-fill-mode))
 (use-package! mixed-pitch
   :hook
   (text-mode . mixed-pitch-mode)

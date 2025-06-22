@@ -45,17 +45,19 @@
       "class<hyprpolkitagent>": "󰟵<sub> </sub>",
       "class<.*pavucontrol>": "<sub> </sub>",
       "class<.*Celluloid|mpv>": "<sub> </sub>",
-      "class<obsidian>": "󰠮<sub> </sub>",
+      "class<obsidian|@joplin/app-desktop>": "󰠮<sub> </sub>",
       "class<steam_app.*|tf_linux64>": "󰮂<sub> </sub>",
       "class<MarbleItUp.*>": "<sub> </sub>",
       "class<steam>": "<sub> </sub>",
       "class<nwg-look>": "<sub> </sub>",
       "class<swappy>": "󰹑<sub> </sub>",
+      "class<org.qbittorrent.qBittorrent>": "<sub> </sub>",
       "title<.*Friends List.*>": "<sub> </sub>",
       "title<.*youtube —.*": "<sub> </sub>",
       "title<OmegaStrikers  >": "󰡹<sub> </sub>",
       "class<footclient> title<(emacs .*|emacsclient .*)>|class<emacs>": "<sub> </sub>",
       "class<footclient> title<(nvim .*|vim .*|vi .*)>": "<sub><small> </small></sub>",
+      "class<hl2_linux> title<Left 4 Dead 2 .*": "󰩒",
       "title<>": ""
     },
     "window-rewrite-default": "󰣆<sub> </sub>",
@@ -65,7 +67,7 @@
   "tray": {
     "icon-size": 22,
     "spacing": 6,
-    "show-passive-items": true,
+    "show-passive-items": false,
     "cursor": true
   },
 

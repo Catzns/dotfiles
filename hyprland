@@ -6,7 +6,7 @@
 ################
 
 monitor = HDMI-A-1, 1920x1080@60, 1920x0, 1
-monitor = DP-2, 1920x1080@144, 0x0, 1, vrr, 1
+monitor = DP-2, 1920x1080@144, 0x0, 1, vrr, 2
 monitor = , preferred, auto, 1
 
 ###################
@@ -20,13 +20,14 @@ $power = rofi -show power -theme power -mode power
 $files = thunar.desktop
 $menu = rofi -show drun -theme desktop -run-command "uwsm-app -- {cmd}"
 $emoji = rofimoji --selector-args "-theme emoji"
-$texteditor = emacsclient -n -r
+$texteditor = obsidian
 
 
 #################
 ### AUTOSTART ###
 #################
 
+exec-once = xrandr --output DP-2 --primary
 exec-once = systemctl --user start hyprpaper.service
 exec-once = systemctl --user start hyprpolkitagent.service
 exec-once = systemctl --user start wayland-wm-app-daemon.service
@@ -34,6 +35,7 @@ exec-once = systemctl --user start hypridle.service
 exec-once = systemctl --user start gammastep.service
 exec-once = systemctl --user start thunar.service
 exec-once = systemctl --user start swaync.service
+exec-once = systemctl --user start syncthing.service
 exec-once = hyprctl dispatch workspace 1
 exec-once = uwsm-app -- hyprlock; systemctl --user start waybar.service
 
