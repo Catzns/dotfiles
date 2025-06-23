@@ -24,3 +24,4 @@ doom-init.el	~/.config/doom/init.el
 doom-packages.el	~/.config/doom/packages.el
 doom-config.el	~/.config/doom/config.el
 rofi-tokyonight	~/.config/rofi/themes/tokyonight.rasinc
+rofimoji	~/.config/rofimoji.rc
