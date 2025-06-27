@@ -8,7 +8,6 @@ fish	~/.config/fish/config.fish
 hyprland	~/.config/hypr/hyprland.conf
 hypridle	~/.config/hypr/hypridle.conf
 hyprlock	~/.config/hypr/hyprlock.conf
-hyprpaper	~/.config/hypr/hyprpaper.conf
 foot	~/.config/foot/foot.ini
 waybar.json	~/.config/waybar/config.jsonc
 waybar.css	~/.config/waybar/style.css
