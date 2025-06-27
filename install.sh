@@ -23,13 +23,12 @@ while read -r entry; do
 	if ! [[ -f "$dotfiles_dir/$link" ]] then
 		printf "%s\n" "File '$link' not present, skipping..."
 		continue
-	elif [[ -h "$path" ]] then
-		printf "%s\n" "'$path' is already a symlink, skipping..."
-		continue
 	fi
 
 # Make target directory, then create link & overwrite existing file
-	mkdir -p "$dir"
+	if ! [[ -d $path ]]; then
+		mkdir -p "$dir"
+	fi
 	ln -sf "$dotfiles_dir/$link" "$path"
 	printf "%s\n" "'$link' successfully linked..."
 done < "$dotfiles_dir/LINKS"
