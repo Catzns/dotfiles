@@ -1,0 +1,14 @@
+* {
+    background: #1a1b26;
+    lightbg: #24283b;
+    activebg: #414868;
+    foreground: #a9b1d6;
+    lightfg: #c0caf5;
+    border: #7aa2f7cc;
+    overlay: #1a1b2680;
+    scroll: #565f89;
+    red: #f7768e;
+    blue: #7aa2f7;
+    purple: #bb9af7;
+    green: #73daca;
+}
