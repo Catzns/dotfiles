@@ -130,22 +130,6 @@
     "format": "{}<sup>󰔄</sup>",
     "tooltip": false
   },
-  "battery": {
-    "states": {
-        "full": 100,
-	"two": 66,
-	"one": 33,
-	"empty": 8
-    },
-    "format": "{icon}<sub> </sub>{capacity:02}",
-    "format-time": "{H} hours {m} minutes remaining.",
-    "format-icons": {
-        "full": "󱊣",
-	"two": "󱊢",
-	"one": "󱊡",
-	"empty": "󰂎"
-    }
-  },
   "custom/pacman": {
     "exec": "while pidof -x checkupdates > /dev/null; do :; done; checkupdates | wc -l",
     "interval": 3600,
@@ -153,7 +137,7 @@
     "tooltip": false
   },
   "group/measurement": {
-    "modules": ["memory", "temperature", "battery", "custom/pacman"],
+    "modules": ["memory", "temperature", "custom/nvidia", "custom/pacman"],
     "orientation": "inherit"
   },
 
