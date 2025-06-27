@@ -252,6 +252,23 @@ window#waybar {
     padding: 0px 6px;
 }
 
+#battery {
+    color: @green;
+    padding: 0px 6px;
+}
+
+#battery.two {
+    color: @yellow;
+}
+
+#battery.one {
+    color: @orange;
+}
+
+#battery.empty {
+    color: @red;
+}
+
 #custom-pacman {
     color: @yellow;
     padding-left: 6px;

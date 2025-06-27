@@ -1,6 +1,0 @@
-export XCURSOR_SIZE="24"
-export HYPRCURSOR_SIZE="24"
-export HYPRCURSOR_THEME="Bibata-Modern-Classic"
-export GTK_THEME="Tokyonight-Dark"
-export QT_QPA_PLATFORMTHEME="gtk3"
-export gtk-application-prefer-dark-theme = true
