@@ -1,0 +1,19 @@
+.widget-title {
+  & > label {
+    margin-right: $margin;
+    font-size: 1.5rem;
+  }
+
+  & > button {
+    color: var(--text-color);
+    background: var(--cc-bg-storm);
+    margin-left: $margin;
+    border-radius: var(--border-radius);
+
+    &:disabled {
+      color: var(--text-color-disabled);
+      background:var(--noti-bg-darker);
+    }
+  }
+}
+

@@ -4,6 +4,7 @@
   "margin-left": 0,
   "margin-right": 0,
   "margin-bottom": 2,
+  "reload_style_on_change": true,
 
   "modules-left": ["group/apps", "hyprland/workspaces"],
   "modules-center": ["clock#date", "idle_inhibitor", "clock#time"],
@@ -38,7 +39,7 @@
       "*": [1, 2, 3, 4, 5, 6, 7, 8, 9]
     },
     "window-rewrite": {
-      "class<footclient>": "󰽒",
+      "class<(footclient|foot)>": "󰽒",
       "class<firefox>": "󰈹<sub> </sub>",
       "class<discord|vesktop>": "<sub> </sub>",
       "class<thunar>": "<sub> </sub>",
@@ -52,11 +53,15 @@
       "class<nwg-look>": "<sub> </sub>",
       "class<swappy>": "󰹑<sub> </sub>",
       "class<org.qbittorrent.qBittorrent>": "<sub> </sub>",
+      "class<nordvpn-gui>": "󰖂<sub> </sub>",
+      "class<org.kde.kdenlive>": "<sub> </sub>",
       "title<.*Friends List.*>": "<sub> </sub>",
       "title<.*youtube —.*": "<sub> </sub>",
       "title<OmegaStrikers  >": "󰡹<sub> </sub>",
-      "class<footclient> title<(emacs .*|emacsclient .*)>|class<emacs>": "<sub> </sub>",
-      "class<footclient> title<(nvim .*|vim .*|vi .*)>": "<sub><small> </small></sub>",
+      "class<org.kde.kdenlive> title<(Rendering.*)?Kdenlive>": "",
+      "class<(footclient|foot)> title<(emacs .*|emacsclient .*)>|class<emacs>": "<sub> </sub>",
+      "class<(footclient|foot)> title<(nvim .*|vim .*|vi .*)>": "<sub><small> </small></sub>",
+      "class<(footclient|foot)> title<Yazi:.*>": "󰇥<sub> </sub>",
       "class<hl2_linux> title<Left 4 Dead 2 .*": "󰩒",
       "title<>": ""
     },
