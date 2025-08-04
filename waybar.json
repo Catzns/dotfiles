@@ -42,7 +42,7 @@
       "class<(footclient|foot)>": "󰽒",
       "class<firefox>": "󰈹<sub> </sub>",
       "class<discord|vesktop>": "<sub> </sub>",
-      "class<thunar>": "<sub> </sub>",
+      "class<(thunar|xdg-desktop-portal-gtk)>": "<sub> </sub>",
       "class<hyprpolkitagent>": "󰟵<sub> </sub>",
       "class<.*pavucontrol>": "<sub> </sub>",
       "class<.*Celluloid|mpv>": "<sub> </sub>",

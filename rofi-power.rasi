@@ -42,7 +42,7 @@ element {
     border: 0 0 4px;
     border-color: @lightbg;
     border-radius: 6;
-    padding: 1ch 0ch;
+    padding: 0ch 0ch;
     cursor: pointer;
 }
 
@@ -51,7 +51,7 @@ element.selected {
 }
 
 element-text {
-    font: "Font Awesome 6 Free Normal 120";
+    font: "JetBrainsMono NFP Normal 105";
     text-color: @purple;
     horizontal-align: 0.5;
     vertical-align: 0.5;

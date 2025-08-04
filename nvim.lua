@@ -38,58 +38,108 @@ vim.o.foldmethod = 'expr'
 vim.o.foldcolumn = '1'
 vim.o.foldlevelstart = 999
 
+-- [[ FUNCTIONS ]]
+local function split()
+  if (vim.api.nvim_win_get_width(0) < vim.api.nvim_win_get_height(0) * 3) then
+    vim.api.nvim_open_win(0, true, {
+      vertical = false,
+      win = 0,
+    })
+  else
+    vim.api.nvim_open_win(0, true, {
+      vertical = true,
+      win = 0,
+    })
+  end
+end
+
+vim.keymap.set('n', '<leader>ee', split)
+
 -- [[ KEYMAPS ]]
-vim.keymap.set('n', '<s-u>', '<c-r>')
-vim.keymap.set('n', '<esc>', '<cmd>nohlsearch<cr>')
+vim.keymap.set({ 'n', 'x' }, '<s-u>', '<c-r>')
+vim.keymap.set({ 'n', 'x' }, '<esc>', '<cmd>nohlsearch<cr><esc>')
 vim.keymap.set('t', '<esc><esc>', '<c-\\><c-n>', { desc = 'Exit terminal mode' })
-vim.keymap.set({'n', 'v', 'x', 'o'}, 'j', 'gj')
-vim.keymap.set({'n', 'v', 'x', 'o'}, 'k', 'gk')
-vim.keymap.set({'n', 'v', 'x', 'o'}, 'H', 'g^')
-vim.keymap.set({'n', 'v', 'x', 'o'}, 'L', 'g$')
+vim.keymap.set({ 'n', 'x', 'o' }, 'j', 'gj')
+vim.keymap.set({ 'n', 'x', 'o' }, 'k', 'gk')
+-- H and L jump to end of visual line if text is wrapped, real line if not
+vim.keymap.set({ 'n', 'x', 'o' }, 'H', function()
+  if vim.wo.wrap then
+    return 'g^'
+  else
+    return '^'
+  end
+end, { expr = true, noremap = true })
+vim.keymap.set({ 'n', 'x', 'o' }, 'L', function()
+  if vim.wo.wrap then
+    return 'g$'
+  else
+    return '$'
+  end
+end, { expr = true, noremap = true })
 
 -- Leader menu
+vim.keymap.set({ 'n', 'x' }, '<leader>l', '<CMD>Lazy<CR>', { desc = '[l]azy Package Manager' })
+vim.keymap.set({ 'n', 'x' }, '<leader>q', '<CMD>q<CR>', { desc = '[q]uit Neovim' })
 
--- Q - quit
-vim.keymap.set('n', '<leader>q', '<CMD>q<CR>', {desc = '[q]uit Neovim'})
+-- B - buffer
+vim.keymap.set({ 'n', 'x' }, '<leader>bC', '<CMD>hide<CR>', { desc = '[C]lose Buffer & Window' })
+vim.keymap.set({ 'n', 'x' }, '<leader>bn', '<CMD>enew<CR>', { desc = '[n]ew Buffer' })
+vim.keymap.set({ 'n', 'x' }, '<leader>bs', function()
+
+end, { desc = 'New Buffer in Horizontal [s]plit' })
+vim.keymap.set({ 'n', 'x' }, '<leader>bh', '<CMD>new<CR>', { desc = 'New Buffer in Horizontal [s]plit' })
+vim.keymap.set({ 'n', 'x' }, '<leader>bv', '<CMD>vnew<CR>', { desc = 'New Buffer in [v]ertical Split' })
+
+-- F - file
+vim.keymap.set({ 'n', 'x' }, '<leader>fw', '<CMD>w<CR>', { desc = '[w]rite' })
+vim.keymap.set({ 'n', 'x' }, '<leader>fW', '<CMD>wq<CR>', { desc = '[W]rite & Close' })
+vim.keymap.set({ 'n', 'x' }, '<leader>fs', function()
+  vim.ui.input({
+    prompt = 'Save as: ',
+    completion = 'dir',
+    default = vim.fn.getcwd() .. '/' .. vim.fn.expand('%')
+  }, function(input) if input then vim.cmd('saveas ' .. input) end end)
+end, { desc = '[s]ave as...' })
+vim.keymap.set({ 'n', 'x' }, '<leader>fc', '<CMD>edit ' .. vim.fn.stdpath('config') .. '/init.lua<CR>', { desc = 'Open [c]onfig' })
 
 -- W - window
-vim.keymap.set({'n', 'v', 'x', 'i'}, '<a-left>', '<CMD>vertical resize -4<CR>', { desc = 'Shrink window horizontally'} )
-vim.keymap.set({'n', 'v', 'x', 'i'}, '<a-down>', '<CMD>resize -4<CR>', { desc = 'Shrink window vertically'} )
-vim.keymap.set({'n', 'v', 'x', 'i'}, '<a-up>', '<CMD>resize +4<CR>', { desc = 'Expand window vertically'} )
-vim.keymap.set({'n', 'v', 'x', 'i'}, '<a-right>', '<CMD>vertical resize +4<CR>', { desc = 'Expand window horizontally'} )
+vim.keymap.set({ 'n', 'x', 'i' }, '<a-left>', '<CMD>vertical resize -4<CR>', { desc = 'Shrink window horizontally'} )
+vim.keymap.set({ 'n', 'x', 'i' }, '<a-down>', '<CMD>resize -4<CR>', { desc = 'Shrink window vertically'} )
+vim.keymap.set({ 'n', 'x', 'i' }, '<a-up>', '<CMD>resize +4<CR>', { desc = 'Expand window vertically'} )
+vim.keymap.set({ 'n', 'x', 'i' }, '<a-right>', '<CMD>vertical resize +4<CR>', { desc = 'Expand window horizontally'} )
 
-vim.keymap.set('n', '<leader>w<a-h>', '<CMD>vertical resize -16<CR>', { desc = 'Shrink window horizontally'} )
-vim.keymap.set('n', '<leader>w<a-j>', '<CMD>resize -16<CR>', { desc = 'Shrink window vertically'} )
-vim.keymap.set('n', '<leader>w<a-k>', '<CMD>resize +16<CR>', { desc = 'Expand window vertically'} )
-vim.keymap.set('n', '<leader>w<a-l>', '<CMD>vertical resize +16<CR>', { desc = 'Expand window horizontally'} )
-vim.keymap.set('n', '<leader>w=', '<c-w>=', { desc = 'Equalize window sizes'})
+vim.keymap.set({ 'n', 'x' }, '<leader>w<a-h>', '<CMD>vertical resize -16<CR>', { desc = 'Shrink window horizontally' } )
+vim.keymap.set({ 'n', 'x' }, '<leader>w<a-j>', '<CMD>resize -16<CR>', { desc = 'Shrink window vertically' } )
+vim.keymap.set({ 'n', 'x' }, '<leader>w<a-k>', '<CMD>resize +16<CR>', { desc = 'Expand window vertically' } )
+vim.keymap.set({ 'n', 'x' }, '<leader>w<a-l>', '<CMD>vertical resize +16<CR>', { desc = 'Expand window horizontally' } )
+vim.keymap.set({ 'n', 'x' }, '<leader>w=', '<c-w>=', { desc = 'Equalize window sizes' })
 
-vim.keymap.set('n', '<leader>wh', '<c-w>h', { desc = 'Shift focus one window left' })
-vim.keymap.set('n', '<leader>wj', '<c-w>j', { desc = 'Shift focus one window down' })
-vim.keymap.set('n', '<leader>wk', '<c-w>k', { desc = 'Shift focus one window up' })
-vim.keymap.set('n', '<leader>wl', '<c-w>l', { desc = 'Shift focus one window right' })
-vim.keymap.set('n', '<leader>ww', '<c-w>w', { desc = 'Shift focus to next window' })
-vim.keymap.set('n', '<leader>wW', '<c-w>W', { desc = 'Shift focus to previous window' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wh', '<c-w>h', { desc = 'Shift focus one window left' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wj', '<c-w>j', { desc = 'Shift focus one window down' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wk', '<c-w>k', { desc = 'Shift focus one window up' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wl', '<c-w>l', { desc = 'Shift focus one window right' })
+vim.keymap.set({ 'n', 'x' }, '<leader>ww', '<c-w>w', { desc = 'Shift focus to next window' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wW', '<c-w>W', { desc = 'Shift focus to previous window' })
 
-vim.keymap.set('n', '<leader>wH', '<c-w>H', { desc = 'Shift window to the left' })
-vim.keymap.set('n', '<leader>wJ', '<c-w>J', { desc = 'Shift window to the bottom' })
-vim.keymap.set('n', '<leader>wK', '<c-w>K', { desc = 'Shift window to the top' })
-vim.keymap.set('n', '<leader>wL', '<c-w>L', { desc = 'Shift window to the right' })
-vim.keymap.set('n', '<leader>wx', '<c-w>x', { desc = 'E[x]change windows' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wH', '<c-w>H', { desc = 'Shift window to the left' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wJ', '<c-w>J', { desc = 'Shift window to the bottom' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wK', '<c-w>K', { desc = 'Shift window to the top' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wL', '<c-w>L', { desc = 'Shift window to the right' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wx', '<c-w>x', { desc = 'E[x]change windows' })
 
-vim.keymap.set('n', '<leader>wc', '<c-w>c', { desc = '[c]lose window'})
-vim.keymap.set('n', '<leader>wC', '<c-w>o', { desc = '[C]lose all other windows'})
+vim.keymap.set({ 'n', 'x' }, '<leader>wc', '<c-w>c', { desc = '[c]lose window' })
+vim.keymap.set({ 'n', 'x' }, '<leader>wC', '<c-w>o', { desc = '[C]lose all other windows' })
 
 -- T - toggle
-vim.keymap.set('n', '<leader>td', function()
-  local vlines = not vim.diagnostic.config().virtual_lines
-  local vtext = not vim.diagnostic.config().virtual_text and {
-    source = 'if_many',
-    spacing = 1,
-  }
+vim.keymap.set({'n', 'x', }, '<leader>tc', function()
+  vim.o.number = not vim.o.number
+  vim.o.relativenumber = not vim.o.relativenumber
+  vim.o.signcolumn = (vim.o.signcolumn == 'yes' and 'no') or 'yes'
+  vim.o.foldcolumn = (vim.o.foldcolumn == '1' and '0') or '1'
+end, { desc = 'Toggle side [c]olumns' })
+vim.keymap.set({ 'n', 'x' }, '<leader>td', function()
   vim.diagnostic.config({
-    virtual_lines = vlines,
-    virtual_text = vtext,
+    virtual_lines = not vim.diagnostic.config().virtual_lines
   })
 end, { desc = 'Toggle [d]iagnostic Format' })
 
@@ -107,10 +157,7 @@ vim.diagnostic.config {
       [vim.diagnostic.severity.HINT] = '󰌶 ',
     },
   },
-  virtual_text = {
-    source = 'if_many',
-    spacing = 1,
-  },
+  virtual_lines = true
 }
 
 -- [[ LSP ]]
@@ -122,10 +169,10 @@ vim.lsp.enable({
 
 -- [[ AUTOCOMMANDS ]]
 -- Open Oil with a preview
-vim.api.nvim_create_autocmd("User", {
-  pattern = "OilEnter",
+vim.api.nvim_create_autocmd('User', {
+  pattern = 'OilEnter',
   callback = vim.schedule_wrap(function(args)
-    local oil = require("oil")
+    local oil = require('oil')
     if vim.api.nvim_get_current_buf() == args.data.buf and oil.get_cursor_entry() then
       oil.open_preview()
     end
@@ -227,7 +274,7 @@ require('lazy').setup {
         documentation = { auto_show = false }
       },
       sources = {
-        default = {'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
+        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
         providers = {
           lazydev = {
             name = "LazyDev",
@@ -250,18 +297,53 @@ require('lazy').setup {
     'folke/snacks.nvim',
     lazy = false,
     priority = 1000,
+    ---@module 'snacks'
+    ---@type snacks.Config
     opts = {
       quickfile = { enabled = true },
       bigfile = { enabled = true },
       dashboard = { enabled = true },
       input = { enabled = true },
       notifier = { enabled = true },
+      bufdelete = { enabled = true },
       indent = {
         animate = {
           enabled = false
         }
       },
       picker = { enabled = true },
+    },
+    keys = {
+      -- Leader
+      { '<leader> ', function() Snacks.picker.smart() end, mode = { 'n', 'x' }, desc = 'Search Files by Name' },
+      { '<leader>/', function() Snacks.picker.grep() end, mode = { 'n', 'x' }, desc = 'Search Files by Content' },
+      { '<leader>,', function() Snacks.picker.buffers() end, mode = { 'n', 'x' }, desc = 'Search Buffers' },
+      { '<leader>h', function() Snacks.picker.help() end, mode = { 'n', 'x' }, desc = 'Search [h]elp' },
+      { '<leader>p', function() Snacks.picker.yanky() end, mode = { 'n', 'x' }, desc = '[p]ut From Yankring' },
+      -- B - buffer
+      { '<leader>bb', function() Snacks.picker.buffers() end, mode = { 'n', 'x' }, desc = 'Search [b]uffers' },
+      { '<leader>bc', function() Snacks.bufdelete() end, mode = { 'n', 'x' }, desc = '[c]lose Buffer' },
+      { '<leader>bo', function() Snacks.bufdelete.other() end, mode = { 'n', 'x' }, desc = 'Close [o]ther Buffers' },
+      -- F - file
+      { '<leader>ff', function() Snacks.picker.files() end, mode = { 'n', 'x' }, desc = 'Search [f]iles in CWD' },
+      { '<leader>fF', function() Snacks.picker.files({ dirs = { '~' } }) end, mode = { 'n', 'x' }, desc = 'Search [F]iles in Home' },
+      -- S - search
+      { '<leader>sa', function() Snacks.picker.autocmds() end, mode = { 'n', 'x' }, desc = '[a]utocmds' },
+      { '<leader>sb', function() Snacks.picker.lines() end, mode = { 'n', 'x' }, desc = 'Current [b]uffer' },
+      { '<leader>sB', function() Snacks.picker.grep_buffers() end, mode = { 'n', 'x' }, desc = 'Open [B]uffers' },
+      { '<leader>sc', function() Snacks.picker.commands() end, mode = { 'n', 'x' }, desc = '[c]ommands' },
+      { '<leader>sd', function() Snacks.picker.diagnostics() end, mode = { 'n', 'x' }, desc = '[d]iagnostics' },
+      { '<leader>sh', function() Snacks.picker.help() end, mode = { 'n', 'x' }, desc = '[h]elp' },
+      { '<leader>sH', function() Snacks.picker.highlights() end, mode = { 'n', 'x' }, desc = '[H]ighlights' },
+      { '<leader>si', function() Snacks.picker.icons() end, mode = { 'n', 'x' }, desc = '[i]cons' },
+      { '<leader>sj', function() Snacks.picker.jumps() end, mode = { 'n', 'x' }, desc = '[j]umps' },
+      { '<leader>sk', function() Snacks.picker.keymaps() end, mode = { 'n', 'x' }, desc = '[k]eymaps' },
+      { '<leader>sl', function() Snacks.picker.loclist() end, mode = { 'n', 'x' }, desc = '[l]ocation List' },
+      { '<leader>sm', function() Snacks.picker.marks() end, mode = { 'n', 'x' }, desc = '[m]arks' },
+      { '<leader>sM', function() Snacks.picker.man() end, mode = { 'n', 'x' }, desc = '[M]an Pages' },
+      { '<leader>sq', function() Snacks.picker.qflist() end, mode = { 'n', 'x' }, desc = '[q]uickfix List' },
+      { '<leader>su', function() Snacks.picker.undo() end, mode = { 'n', 'x' }, desc = '[u]ndo History' },
+      { '<leader>s/', function() Snacks.picker.grep() end, mode = { 'n', 'x' }, desc = 'Files by Content' },
     }
   },
 
@@ -324,8 +406,16 @@ require('lazy').setup {
           miniclue.gen_clues.registers(),
           miniclue.gen_clues.windows(),
           miniclue.gen_clues.z(),
-          { mode = 'n', keys = '<Leader>w', desc = '+[w]indow'},
-          { mode = 'n', keys = '<leader>t', desc = '+[t]oggle'},
+          { mode = 'n', keys = '<Leader>w', desc = '+[w]indow' },
+          { mode = 'x', keys = '<Leader>w', desc = '+[w]indow' },
+          { mode = 'n', keys = '<leader>t', desc = '+[t]oggle' },
+          { mode = 'x', keys = '<leader>t', desc = '+[t]oggle' },
+          { mode = 'n', keys = '<leader>s', desc = '+[s]earch' },
+          { mode = 'x', keys = '<leader>s', desc = '+[s]earch' },
+          { mode = 'n', keys = '<leader>b', desc = '+[b]uffer' },
+          { mode = 'x', keys = '<leader>b', desc = '+[b]uffer' },
+          { mode = 'n', keys = '<leader>f', desc = '+[f]ile' },
+          { mode = 'x', keys = '<leader>f', desc = '+[f]ile' },
         },
         window = {
           delay = 0,
@@ -349,6 +439,11 @@ require('lazy').setup {
   -- Yank Ring
   {
     "gbprod/yanky.nvim",
+    lazy = false,
+    dependences = {
+      'folke/snacks.nvim',
+    },
+    ---@module 'yanky'
     opts = {
       ring = {
         storage = "shada",
@@ -361,7 +456,6 @@ require('lazy').setup {
       },
     },
     keys = {
-      { "<leader>p", "<cmd>YankyRingHistory<cr>", mode = { "n", "x" }, desc = "Open Yank History" },
       { "y", "<Plug>(YankyYank)", mode = { "n", "x" }, desc = "Yank text" },
       { "p", "<Plug>(YankyPutAfter)", mode = { "n", "x" }, desc = "Put yanked text after cursor" },
       { "P", "<Plug>(YankyPutBefore)", mode = { "n", "x" }, desc = "Put yanked text before cursor" },
@@ -386,6 +480,7 @@ require('lazy').setup {
   ---@type LazySpec
   {
     'mikavilpas/yazi.nvim',
+    enabled = false,
     dependencies = {
       { 'nvim-lua/plenary.nvim', lazy = true },
     },
