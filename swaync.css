@@ -400,3 +400,8 @@
 .widget-inhibitors > button {
   margin-left: 8px;
   border-radius: var(--border-radius); }
+
+/* Notifications widget */
+.widget-notifications {
+  margin: 8px 0px;
+  padding: 8px 0px; }

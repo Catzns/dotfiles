@@ -26,3 +26,4 @@ rofi-tokyonight.rasi	~/.config/rofi/themes/tokyonight.rasinc
 rofimoji.rc	~/.config/rofimoji.rc
 nvim.lua	~/.config/nvim/init.lua
 yazi-theme.toml	~/.config/yazi/theme.toml
+.stylua.toml	~/.config/nvim/.stylua.toml

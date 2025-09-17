@@ -8,8 +8,10 @@ if status is-interactive
     starship init fish | source
     fish_vi_key_bindings insert
     fish_add_path ~/.config/emacs/bin
-    set EDITOR "nvim"
-    set VISUAL "nvim"
+    set -x EDITOR "nvim"
+    set -x VISUAL "nvim"
+    set -x MANPAGER "nvim +Man!"
+    #    alias info="info --vi-keys"
 end
 
 function Yazi
