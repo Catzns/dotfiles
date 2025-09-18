@@ -3,14 +3,17 @@
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
+vim.g.virtual_lines = true
 
 -- [[ OPTIONS ]]
 vim.o.number = true
 vim.o.relativenumber = true
 vim.o.mouse = 'a'
+vim.o.softtabstop = 4
+vim.o.shiftwidth = 4
 vim.o.showmode = false
 vim.o.showcmd = false
--- vim.o.foldminlines = 10
+vim.o.foldminlines = 10
 vim.schedule(function()
   vim.o.clipboard = 'unnamedplus'
 end)
@@ -39,21 +42,28 @@ vim.o.foldcolumn = '1'
 vim.o.foldlevelstart = 999
 
 -- [[ FUNCTIONS ]]
+local function is_landscape()
+  return (vim.api.nvim_win_get_width(0) > vim.api.nvim_win_get_height(0) * 3.5)
+end
+
 local function split()
-  if (vim.api.nvim_win_get_width(0) < vim.api.nvim_win_get_height(0) * 3) then
+  if is_landscape() then
     vim.api.nvim_open_win(0, true, {
-      vertical = false,
+      vertical = true,
       win = 0,
     })
   else
     vim.api.nvim_open_win(0, true, {
-      vertical = true,
+      vertical = false,
       win = 0,
     })
   end
 end
 
-vim.keymap.set('n', '<leader>ee', split)
+local function get_git_dir()
+  local gitdir = vim.fn.finddir('.git/..', '.;')
+  return (gitdir == '' and vim.cmd[[pwd]]) or gitdir
+end
 
 -- [[ KEYMAPS ]]
 vim.keymap.set({ 'n', 'x' }, '<s-u>', '<c-r>')
@@ -127,21 +137,24 @@ vim.keymap.set({ 'n', 'x' }, '<leader>wK', '<c-w>K', { desc = 'Shift window to t
 vim.keymap.set({ 'n', 'x' }, '<leader>wL', '<c-w>L', { desc = 'Shift window to the right' })
 vim.keymap.set({ 'n', 'x' }, '<leader>wx', '<c-w>x', { desc = 'E[x]change windows' })
 
+vim.keymap.set({ 'n', 'x' }, '<leader>ws', split, { desc = '[s]plit Active Window'})
 vim.keymap.set({ 'n', 'x' }, '<leader>wc', '<c-w>c', { desc = '[c]lose window' })
 vim.keymap.set({ 'n', 'x' }, '<leader>wC', '<c-w>o', { desc = '[C]lose all other windows' })
 
 -- T - toggle
-vim.keymap.set({'n', 'x', }, '<leader>tc', function()
+vim.keymap.set({'n', 'x', }, '<leader>tl', function()
   vim.o.number = not vim.o.number
   vim.o.relativenumber = not vim.o.relativenumber
   vim.o.signcolumn = (vim.o.signcolumn == 'yes' and 'no') or 'yes'
   vim.o.foldcolumn = (vim.o.foldcolumn == '1' and '0') or '1'
-end, { desc = 'Toggle side [c]olumns' })
-vim.keymap.set({ 'n', 'x' }, '<leader>td', function()
+end, { desc = 'Toggle [l]ine Columns' })
+vim.keymap.set({ 'n', 'x' }, '<leader>tv', function()
+  local lines = not vim.g.virtual_lines
+  vim.g.virtual_lines = lines
   vim.diagnostic.config({
-    virtual_lines = not vim.diagnostic.config().virtual_lines
+    virtual_lines = lines
   })
-end, { desc = 'Toggle [d]iagnostic Format' })
+end, { desc = 'Toggle [v]irtual Lines' })
 
 
 -- [[ DIAGNOSTICS ]]
@@ -164,19 +177,36 @@ vim.diagnostic.config {
 vim.lsp.enable({
   'lua_ls',
   'cssls',
-
+  'clangd',
 })
 
 -- [[ AUTOCOMMANDS ]]
--- Open Oil with a preview
-vim.api.nvim_create_autocmd('User', {
-  pattern = 'OilEnter',
-  callback = vim.schedule_wrap(function(args)
-    local oil = require('oil')
-    if vim.api.nvim_get_current_buf() == args.data.buf and oil.get_cursor_entry() then
-      oil.open_preview()
+-- Open Help and Man pages vertically
+vim.api.nvim_create_autocmd('BufWinEnter', {
+  pattern = {
+    '*.txt',
+    "*(\\d?)",
+  },
+  callback = function()
+    if ( vim.bo.filetype == 'help' or vim.bo.filetype == 'man' ) and is_landscape() then
+      vim.cmd('wincmd L')
     end
-  end),
+  end
+})
+-- Disable virtual lines in insert mode
+vim.api.nvim_create_autocmd('InsertEnter', {
+  callback = function()
+    vim.diagnostic.config({
+      virtual_lines = false
+    })
+  end
+})
+vim.api.nvim_create_autocmd('InsertLeave', {
+  callback = function()
+    vim.diagnostic.config({
+      virtual_lines = vim.g.virtual_lines
+    })
+  end
 })
 
 -- [[ PLUGIN MANAGER ]]
@@ -199,9 +229,11 @@ vim.opt.rtp:prepend(lazypath)
 -- [[ PLUGINS ]]
 require('lazy').setup {
   -- LSP configurations
+  ---@type LazySpec
   'neovim/nvim-lspconfig',
 
   -- Treesitter parser installer
+  ---@type LazySpec
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'main',
@@ -211,6 +243,7 @@ require('lazy').setup {
       local parsers = {
         'lua',
         'hyprlang',
+        'c',
       }
       require('nvim-treesitter').install(parsers)
       vim.api.nvim_create_autocmd('FileType', {
@@ -224,7 +257,33 @@ require('lazy').setup {
     end
   },
 
+  -- Formatting
+  ---@type LazySpec
+  {
+    'stevearc/conform.nvim',
+    lazy = true,
+    event = "BufWritePre",
+    cmd = 'ConformInfo',
+    ---@module 'conform'
+    ---@type conform.setupOpts
+    opts = {
+      formatters_by_ft = {
+        lua = { 'stylua' },
+        c = { 'clang-format' },
+      },
+      formatters = {},
+      default_format_opts = {
+        lsp_format = 'fallback',
+      },
+      format_on_save = {
+        lsp_format = 'fallback',
+        timeout_ms = 500,
+      },
+    }
+  },
+
   -- Configuration LSP
+  ---@type LazySpec
   {
     'folke/lazydev.nvim',
     lazy = true,
@@ -237,14 +296,23 @@ require('lazy').setup {
   },
 
   -- Indent tools
+  ---@type LazySpec
   {
     'NMAC427/guess-indent.nvim',
     lazy = true,
-    event = 'BufReadPost',
+    cmd = 'GuessIndent',
+    event = {
+      'BufReadPost',
+      'BufNewFile',
+    },
     opts = {},
+    keys = {
+      { '<leader>i', '<CMD>GuessIndent<CR>', mode = { 'n', 'x' }, desc = 'Adjust [i]ndentation' },
+    }
   },
 
   -- Autocompletion
+  ---@type LazySpec
   {
     'saghen/blink.cmp',
     lazy = true,
@@ -293,6 +361,7 @@ require('lazy').setup {
   },
 
   -- File loading optimizations, Splash screen, Indent markers, Fuzzy finder
+  ---@type LazySpec
   {
     'folke/snacks.nvim',
     lazy = false,
@@ -325,8 +394,8 @@ require('lazy').setup {
       { '<leader>bc', function() Snacks.bufdelete() end, mode = { 'n', 'x' }, desc = '[c]lose Buffer' },
       { '<leader>bo', function() Snacks.bufdelete.other() end, mode = { 'n', 'x' }, desc = 'Close [o]ther Buffers' },
       -- F - file
-      { '<leader>ff', function() Snacks.picker.files() end, mode = { 'n', 'x' }, desc = 'Search [f]iles in CWD' },
-      { '<leader>fF', function() Snacks.picker.files({ dirs = { '~' } }) end, mode = { 'n', 'x' }, desc = 'Search [F]iles in Home' },
+      { '<leader>ff', function() Snacks.picker.files({ dirs = { vim.fn.expand('%:h') } }) end, mode = { 'n', 'x' }, desc = 'Search [f]iles in CFD' },
+      { '<leader>fF', function() Snacks.picker.files({ dirs = { get_git_dir() } }) end, mode = { 'n', 'x' }, desc = 'Search [F]iles in Root' },
       -- S - search
       { '<leader>sa', function() Snacks.picker.autocmds() end, mode = { 'n', 'x' }, desc = '[a]utocmds' },
       { '<leader>sb', function() Snacks.picker.lines() end, mode = { 'n', 'x' }, desc = 'Current [b]uffer' },
@@ -349,6 +418,7 @@ require('lazy').setup {
 
   -- Textobjects, ALT moving, Autopairing, Surround macros, f and t extensions,
   -- Git signals, Comment macros, Nerdfont icons, Which-key popups
+  ---@type LazySpec
   {
     'echasnovski/mini.nvim',
     lazy = false,
@@ -437,6 +507,7 @@ require('lazy').setup {
   },
 
   -- Yank Ring
+  ---@type LazySpec
   {
     "gbprod/yanky.nvim",
     lazy = false,
@@ -479,27 +550,35 @@ require('lazy').setup {
   -- File Manager
   ---@type LazySpec
   {
-    'mikavilpas/yazi.nvim',
-    enabled = false,
-    dependencies = {
-      { 'nvim-lua/plenary.nvim', lazy = true },
+    'stevearc/oil.nvim',
+    lazy = false,
+    ---@module 'oil'
+    opts = {
+      default_file_explorer = true,
+      delete_to_trash = true,
+      watch_for_changes = true,
+      columns = {
+        'icon',
+        'permissions',
+      },
+      keymaps = {
+        ['L'] = { 'actions.select', mode = 'n' },
+        ['H'] = { 'actions.parent', mode = 'n' },
+        ['J'] = 'actions.open_cwd',
+        ['K'] = 'actions.cd',
+        ['<A-h>'] = 'actions.toggle_hidden',
+      }
     },
     keys = {
-      { '<leader>-', '<cmd>Yazi<cr>', desc = 'Open yazi at the current file', },
-    },
-    opts = {
-      open_for_directories = true,
-      keymaps = {
-        show_help = '<f1>',
-      },
-    },
-    init = function()
-      vim.g.loaded_netrw = 1
-      vim.g.loaded_netrwPlugin = 1
-    end,
+      { '<leader>-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
+      { '-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
+      { '<leader>fb', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = '[b]rowse Files in CFD' },
+      { '<leader>fB', function() require('oil').open(get_git_dir()) end, mode = { 'n', 'x' }, desc = '[B]rowse Files in Root' },
+    }
   },
 
   -- Pretty UI
+  ---@type LazySpec
   {
     'folke/noice.nvim',
     lazy = true,
@@ -549,6 +628,7 @@ require('lazy').setup {
   },
 
   -- Statusline
+  ---@type LazySpec
   {
     'nvim-lualine/lualine.nvim',
     lazy = true,
@@ -569,6 +649,7 @@ require('lazy').setup {
   },
 
   -- Colorscheme
+  ---@type LazySpec
   {
     'folke/tokyonight.nvim',
     lazy = false,
@@ -577,10 +658,6 @@ require('lazy').setup {
       require('tokyonight').setup({
         style = 'night',
         dim_inactive = true,
-        on_colors = function(colors)
-        end,
-        on_highlights = function(highlights, colors)
-        end,
       })
       vim.cmd('colorscheme tokyonight')
     end
