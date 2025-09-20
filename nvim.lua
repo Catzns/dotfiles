@@ -5,7 +5,6 @@ vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 vim.g.virtual_lines = true
 vim.g.autofmt = true
-print 'swag'
 
 -- [[ OPTIONS ]]
 vim.o.number = true
@@ -100,6 +99,10 @@ vim.keymap.set({ 'n', 'x' }, '<leader>bn', '<CMD>enew<CR>', { desc = '[n]ew Buff
 vim.keymap.set({ 'n', 'x' }, '<leader>bs', function() end, { desc = 'New Buffer in Horizontal [s]plit' })
 vim.keymap.set({ 'n', 'x' }, '<leader>bh', '<CMD>new<CR>', { desc = 'New Buffer in Horizontal [s]plit' })
 vim.keymap.set({ 'n', 'x' }, '<leader>bv', '<CMD>vnew<CR>', { desc = 'New Buffer in [v]ertical Split' })
+
+-- C - Code
+vim.keymap.set({ 'n', 'x' }, '<leader>cn', 'grn', { desc = 'LSP Re[n]ame Symbol' })
+vim.keymap.set({ 'n', 'x' }, '<leader>ca', 'gra', { desc = 'LSP [a]ctions' })
 
 -- F - file
 vim.keymap.set({ 'n', 'x' }, '<leader>fw', '<CMD>w<CR>', { desc = '[w]rite' })
@@ -727,6 +730,10 @@ require('lazy').setup {
           { mode = 'x', keys = '<leader>b', desc = '+[b]uffer' },
           { mode = 'n', keys = '<leader>f', desc = '+[f]ile' },
           { mode = 'x', keys = '<leader>f', desc = '+[f]ile' },
+          { mode = 'n', keys = '<leader>c', desc = '+[c]ode' },
+          { mode = 'x', keys = '<leader>c', desc = '+[c]ode' },
+          { mode = 'n', keys = '<leader>g', desc = '+[g]it' },
+          { mode = 'x', keys = '<leader>g', desc = '+[g]it' },
         },
         window = {
           delay = 0,
@@ -746,6 +753,7 @@ require('lazy').setup {
       }
     end,
   },
+
   -- Code Runner
   ---@type LazySpec
   {
@@ -771,10 +779,11 @@ require('lazy').setup {
     end,
     keys = {
       { 'S', '<Plug>SnipRun', mode = 'x', desc = 'Run Selected [S]nippet' },
-      { 'S', '<Plug>SnipRunOperator', desc = 'Run [S]nippet' },
-      { 'SS', '<Plug>SnipRunOperator_', desc = 'Run [S]nippet on one line' },
+      { 'S', '<Plug>SnipRunOperator', mode = 'n', desc = 'Run [S]nippet' },
+      { '<leader>cR', '<CMD>%SnipRun<CR>', mode = { 'n', 'x' }, desc = '[R]un in REPL' },
     },
   },
+
   -- Yank Ring
   ---@type LazySpec
   {
@@ -857,6 +866,75 @@ require('lazy').setup {
       },
     },
   },
+
+  -- Git Client
+  ---@type LazySpec
+  {
+    'tpope/vim-fugitive',
+    lazy = true,
+    cmd = {
+      'G',
+      'Git',
+      'Ggrep',
+      'Gclog',
+      'Gllog',
+      'Gcd',
+      'Glcd',
+      'Gedit',
+      'Gsplit',
+      'Gvsplit',
+      'Gtabedit',
+      'Gpedit',
+      'Gdrop',
+      'Gread',
+      'Gwrite',
+      'Gwq',
+      'Gdiffsplit',
+      'Gvdiffsplit',
+      'Ghdiffsplit',
+      'GMove',
+      'GRename',
+      'GDelete',
+      'GRemove',
+      'GUnlink',
+      'GBrowse',
+    },
+    keys = {
+      { '<leader>gg', '<CMD>Git<CR>', mode = { 'n', 'x' }, desc = 'Open Fu[g]itive' },
+    },
+  },
+
+  -- Diagnostics
+  ---@type LazySpec
+  {
+    'folke/trouble.nvim',
+    lazy = true,
+    cmd = 'Trouble',
+    config = function()
+      ---@type trouble.Config
+      require('trouble').setup {
+        auto_close = true,
+        focus = true,
+      }
+      vim.api.nvim_create_autocmd('WinLeave', {
+        callback = function()
+          if vim.bo.filetype == 'trouble' then
+            vim.cmd [[Trouble close]]
+          end
+        end,
+      })
+    end,
+    keys = {
+      { '<leader>cc', '<CMD>Trouble diagnostics toggle filter.buf=0<CR>', mode = { 'n', 'x' }, desc = '[c]ode Diagnostics' },
+      { '<leader>cd', '<CMD>Trouble lsp_declarations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [d]eclarations' },
+      { '<leader>cD', '<CMD>Trouble lsp_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [D]efinitions' },
+      { '<leader>ct', '<CMD>Trouble lsp_type_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [t]ype Defs' },
+      { '<leader>cs', '<CMD>Trouble lsp_document_symbols toggle win.position=right<CR>', mode = { 'n', 'x' }, desc = 'LSP [s]ymbols' },
+      { '<leader>cr', '<CMD>Trouble lsp_references toggle', mode = { 'n', 'x' }, desc = 'LSP [r]eferences' },
+      { '<leader>ci', '<CMD>Trouble lsp_implementations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [i]mplementations' },
+    },
+  },
+
   -- Color Picker
   ---@type LazySpec
   {
