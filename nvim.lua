@@ -519,6 +519,15 @@ require('lazy').setup {
         mode = { 'n', 'x' },
         desc = 'Search [F]iles in Root',
       },
+      -- G - git
+      {
+        '<leader>g/',
+        function()
+          Snacks.picker.git_grep()
+        end,
+        mode = { 'n', 'x' },
+        desc = 'Search Repo by Content',
+      },
       -- S - search
       {
         '<leader>sa',
@@ -899,8 +908,35 @@ require('lazy').setup {
       'GUnlink',
       'GBrowse',
     },
+    config = function()
+      vim.api.nvim_create_autocmd('BufWinEnter', {
+        pattern = '*/\\.git/*',
+        callback = function(event)
+          if vim.bo[event.buf].filetype == 'fugitive' then
+            vim.keymap.set('n', 'S', function()
+              local cwd = vim.fn.getcwd(-1, 0)
+              vim.cmd [[Glcd]]
+              vim.cmd [[Git add .]]
+              vim.cmd('lcd ' .. cwd)
+            end, { buffer = true, desc = 'Stage All Files' })
+          end
+        end,
+      })
+      vim.api.nvim_create_autocmd('WinLeave', {
+        pattern = '*/\\.git/*',
+        callback = function(event)
+          if vim.bo[event.buf].filetype == 'fugitive' then
+            vim.api.nvim_win_close(0, false)
+          end
+        end,
+      })
+    end,
     keys = {
-      { '<leader>gg', '<CMD>Git<CR>', mode = { 'n', 'x' }, desc = 'Open Fu[g]itive' },
+      { '<leader>gg', '<CMD>Git<CR>', mode = { 'n', 'x' }, desc = 'Open [g]it Status' },
+      { '<leader>gc', '<CMD>Gcd<CR>', mode = { 'n', 'x' }, desc = '[c]hange Directory to Repo' },
+      { '<leader>gr', '<CMD>Gread<CR>', mode = { 'n', 'x' }, desc = '[r]evert to Last Commit' },
+      { '<leader>gw', '<CMD>Gwrite<CR>', mode = { 'n', 'x' }, desc = '[w]rite & Stage File' },
+      { '<leader>gd', '<CMD>Gdiffsplit<CR>', mode = { 'n', 'x' }, desc = '[d]iff Current File' },
     },
   },
 
@@ -917,8 +953,8 @@ require('lazy').setup {
         focus = true,
       }
       vim.api.nvim_create_autocmd('WinLeave', {
-        callback = function()
-          if vim.bo.filetype == 'trouble' then
+        callback = function(event)
+          if vim.bo[event.buf].filetype == 'trouble' then
             vim.cmd [[Trouble close]]
           end
         end,
