@@ -45,7 +45,7 @@ vim.o.foldlevelstart = 999
 
 -- [[ FUNCTIONS ]]
 local function is_landscape()
-  return (vim.api.nvim_win_get_width(0) > vim.api.nvim_win_get_height(0) * 3.5)
+  return (vim.api.nvim_win_get_width(0) > (vim.api.nvim_win_get_height(0) * 2.75))
 end
 
 local function split()
@@ -96,9 +96,13 @@ vim.keymap.set({ 'n', 'x' }, '<leader>q', '<CMD>q<CR>', { desc = '[q]uit Neovim'
 -- B - buffer
 vim.keymap.set({ 'n', 'x' }, '<leader>bC', '<CMD>hide<CR>', { desc = '[C]lose Buffer & Window' })
 vim.keymap.set({ 'n', 'x' }, '<leader>bn', '<CMD>enew<CR>', { desc = '[n]ew Buffer' })
-vim.keymap.set({ 'n', 'x' }, '<leader>bs', function() end, { desc = 'New Buffer in Horizontal [s]plit' })
-vim.keymap.set({ 'n', 'x' }, '<leader>bh', '<CMD>new<CR>', { desc = 'New Buffer in Horizontal [s]plit' })
-vim.keymap.set({ 'n', 'x' }, '<leader>bv', '<CMD>vnew<CR>', { desc = 'New Buffer in [v]ertical Split' })
+vim.keymap.set({ 'n', 'x' }, '<leader>bs', function()
+  if is_landscape() then
+    return '<CMD>vert enew<CR>'
+  else
+    return '<CMD>enew<CR>'
+  end
+end, { expr = true, desc = 'New Buffer in [s]plit' })
 
 -- C - Code
 vim.keymap.set({ 'n', 'x' }, '<leader>cn', 'grn', { desc = 'LSP Re[n]ame Symbol' })
@@ -177,7 +181,7 @@ vim.diagnostic.config {
       [vim.diagnostic.severity.HINT] = '󰌶 ',
     },
   },
-  virtual_lines = true,
+  virtual_lines = vim.g.virtual_lines,
 }
 
 -- [[ LSP ]]
@@ -205,7 +209,7 @@ vim.api.nvim_create_autocmd('BufWinEnter', {
       'help',
       'man',
     }
-    if vim.tbl_contains(ft, vim.bo.filetype) and is_landscape() then
+    if vim.tbl_contains(ft, vim.bo.filetype) and (vim.api.nvim_win_get_width(0) > vim.api.nvim_win_get_height(0) * 5.5) then
       vim.cmd 'wincmd L'
     end
   end,
@@ -220,9 +224,11 @@ vim.api.nvim_create_autocmd('InsertEnter', {
 })
 vim.api.nvim_create_autocmd('InsertLeave', {
   callback = function()
-    vim.diagnostic.config {
-      virtual_lines = vim.g.virtual_lines,
-    }
+    vim.schedule(function()
+      vim.diagnostic.config {
+        virtual_lines = vim.g.virtual_lines,
+      }
+    end)
   end,
 })
 
@@ -244,868 +250,1033 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- [[ PLUGINS ]]
+---@module 'lazy'
+---@type LazyConfig
 require('lazy').setup {
-  -- LSP configurations
-  ---@type LazySpec
-  'neovim/nvim-lspconfig',
+  spec = {
+    -- LSP configurations
+    ---@type LazySpec
+    'neovim/nvim-lspconfig',
 
-  -- Treesitter parser installer
-  ---@type LazySpec
-  {
-    'nvim-treesitter/nvim-treesitter',
-    branch = 'main',
-    lazy = false,
-    build = ':TSUpdate',
-    config = function()
-      local parsers = {
-        'lua',
-        'hyprlang',
-        'c',
-      }
-      require('nvim-treesitter').install(parsers)
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = parsers,
-        callback = function()
-          vim.treesitter.start()
-          vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
-          vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-        end,
-      })
-    end,
-  },
+    -- Treesitter parser installer
+    ---@type LazySpec
+    {
+      'nvim-treesitter/nvim-treesitter',
+      branch = 'main',
+      lazy = false,
+      build = ':TSUpdate',
+      config = function()
+        local parsers = {
+          'lua',
+          'hyprlang',
+          'c',
+        }
+        require('nvim-treesitter').install(parsers)
+        vim.api.nvim_create_autocmd('FileType', {
+          pattern = parsers,
+          callback = function()
+            vim.treesitter.start()
+            vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
+            vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+          end,
+        })
+      end,
+    },
 
-  -- Formatting
-  ---@type LazySpec
-  {
-    'stevearc/conform.nvim',
-    lazy = true,
-    event = 'BufWritePre',
-    cmd = 'ConformInfo',
-    config = function()
-      ---@module 'conform'
-      ---@type conform.setupOpts
-      require('conform').setup {
-        formatters_by_ft = {
-          lua = { 'stylua' },
-          c = { 'clang-format' },
-        },
-        formatters = {},
-        default_format_opts = {
-          lsp_format = 'fallback',
-        },
-        format_on_save = function(bufnr)
-          if vim.g.autofmt or vim.b[bufnr].autofmt then
-            return { timeout_ms = 500, lsp_format = 'fallback' }
-          else
-            return
-          end
-        end,
-      }
-      vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
-    end,
-    keys = {
-      {
-        '<leader>bh',
-        function()
-          require('conform').format({ async = true }, function(err)
-            if not err then
-              local mode = vim.api.nvim_get_mode().mode
-              if vim.startswith(string.lower(mode), 'v') then
-                vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
-              end
+    -- Formatting
+    ---@type LazySpec
+    {
+      'stevearc/conform.nvim',
+      lazy = true,
+      event = 'BufWritePre',
+      cmd = 'ConformInfo',
+      config = function()
+        ---@module 'conform'
+        ---@type conform.setupOpts
+        require('conform').setup {
+          formatters_by_ft = {
+            lua = { 'stylua' },
+            c = { 'clang-format' },
+          },
+          formatters = {},
+          default_format_opts = {
+            lsp_format = 'fallback',
+          },
+          format_on_save = function()
+            if vim.g.autofmt then
+              return { timeout_ms = 500, lsp_format = 'fallback' }
+            else
+              return
             end
-          end)
-        end,
-        mode = { 'n', 'x' },
-        desc = '[f]ormat Buffer',
-      },
-      {
-        '<leader>tf',
-        function()
-          local fmt = not vim.b.autofmt
-          vim.b.autofmt = fmt
-          print((fmt and 'Local autoformatting enabled') or 'Local autoformatting disabled')
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Toggle Auto[f]ormat in Buffer',
-      },
-      {
-        '<leader>tF',
-        function()
-          local fmt = not vim.g.autofmt
-          vim.g.autofmt = fmt
-          vim.b.autofmt = fmt
-          print((vim.g.autofmt and 'Global autoformatting enabled') or 'Global autoformatting disabled')
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Toggle Auto[F]ormat Globally',
-      },
-    },
-  },
-
-  -- Configuration LSP
-  ---@type LazySpec
-  {
-    'folke/lazydev.nvim',
-    lazy = true,
-    ft = 'lua',
-    opts = {
-      library = {
-        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+          end,
+        }
+        vim.o.formatexpr = "v:lua.require'conform'.formatexpr()"
+      end,
+      keys = {
+        {
+          '<leader>bh',
+          function()
+            require('conform').format({ async = true }, function(err)
+              if not err then
+                local mode = vim.api.nvim_get_mode().mode
+                if vim.startswith(string.lower(mode), 'v') then
+                  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
+                end
+              end
+            end)
+          end,
+          mode = { 'n', 'x' },
+          desc = '[f]ormat Buffer',
+        },
+        {
+          '<leader>tf',
+          function()
+            local fmt = not vim.g.autofmt
+            vim.g.autofmt = fmt
+            print((fmt and 'Autoformatting enabled') or 'Autoformatting disabled')
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Toggle Auto[f]ormat in Buffer',
+        },
       },
     },
-  },
 
-  -- Indent tools
-  ---@type LazySpec
-  {
-    'NMAC427/guess-indent.nvim',
-    lazy = true,
-    cmd = 'GuessIndent',
-    event = {
-      'BufReadPost',
-      'BufNewFile',
-    },
-    opts = {},
-    keys = {
-      { '<leader>i', '<CMD>GuessIndent<CR>', mode = { 'n', 'x' }, desc = 'Adjust [i]ndentation' },
-    },
-  },
-
-  -- Autocompletion
-  ---@type LazySpec
-  {
-    'saghen/blink.cmp',
-    lazy = true,
-    event = 'BufReadPost',
-    version = '1.*',
-    ---@module 'blink.cmp'
-    ---@type blink.cmp.Config
-    opts = {
-      -- 'default' (recommended) for mappings similar to built-in completions (C-y to accept)
-      -- 'super-tab' for mappings similar to vscode (tab to accept)
-      -- 'enter' for enter to accept
-      -- 'none' for no mappings
-      --
-      -- All presets have the following mappings:
-      -- C-space: Open menu or open docs if already open
-      -- C-n/C-p or Up/Down: Select next/previous item
-      -- C-e: Hide menu
-      -- C-k: Toggle signature help (if signature.enabled = true)
-      --
-      -- See :h blink-cmp-config-keymap for defining your own keymap
-      keymap = { preset = 'default' },
-
-      appearance = {
-        nerd_font_variant = 'mono',
+    -- Configuration LSP
+    ---@type LazySpec
+    {
+      'folke/lazydev.nvim',
+      lazy = true,
+      ft = 'lua',
+      opts = {
+        library = {
+          { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+        },
       },
-      completion = {
-        documentation = { auto_show = false },
+    },
+
+    -- Indent tools
+    ---@type LazySpec
+    {
+      'NMAC427/guess-indent.nvim',
+      lazy = true,
+      cmd = 'GuessIndent',
+      event = {
+        'BufReadPost',
+        'BufNewFile',
       },
-      sources = {
-        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
-        providers = {
-          lazydev = {
-            name = 'LazyDev',
-            module = 'lazydev.integrations.blink',
-            score_offset = 100,
+      opts = {},
+      keys = {
+        { '<leader>i', '<CMD>GuessIndent<CR>', mode = { 'n', 'x' }, desc = 'Adjust [i]ndentation' },
+      },
+    },
+
+    -- Autocompletion
+    ---@type LazySpec
+    {
+      'saghen/blink.cmp',
+      lazy = true,
+      event = 'BufWinEnter',
+      version = '1.*',
+      ---@module 'blink.cmp'
+      ---@type blink.cmp.Config
+      opts = {
+        -- 'default' (recommended) for mappings similar to built-in completions (C-y to accept)
+        -- 'super-tab' for mappings similar to vscode (tab to accept)
+        -- 'enter' for enter to accept
+        -- 'none' for no mappings
+        --
+        -- All presets have the following mappings:
+        -- C-space: Open menu or open docs if already open
+        -- C-n/C-p or Up/Down: Select next/previous item
+        -- C-e: Hide menu
+        -- C-k: Toggle signature help (if signature.enabled = true)
+        --
+        -- See :h blink-cmp-config-keymap for defining your own keymap
+        keymap = { preset = 'default' },
+
+        appearance = {
+          nerd_font_variant = 'mono',
+        },
+        completion = {
+          documentation = { auto_show = false },
+        },
+        sources = {
+          default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
+          providers = {
+            lazydev = {
+              name = 'LazyDev',
+              module = 'lazydev.integrations.blink',
+              score_offset = 100,
+            },
           },
         },
-      },
-      snippets = { preset = 'mini_snippets' },
-      cmdline = {
-        enabled = false,
-      },
-      fuzzy = { implementation = 'prefer_rust_with_warning' },
-    },
-    opts_extend = { 'sources.default' },
-  },
-
-  -- File loading optimizations, Splash screen, Indent markers, Fuzzy finder
-  ---@type LazySpec
-  {
-    'folke/snacks.nvim',
-    lazy = false,
-    priority = 1000,
-    ---@module 'snacks'
-    ---@type snacks.Config
-    opts = {
-      quickfile = { enabled = true },
-      bigfile = { enabled = true },
-      dashboard = { enabled = true },
-      input = { enabled = true },
-      notifier = { enabled = true },
-      bufdelete = { enabled = true },
-      indent = {
-        animate = {
+        snippets = { preset = 'mini_snippets' },
+        cmdline = {
           enabled = false,
         },
+        fuzzy = { implementation = 'prefer_rust_with_warning' },
       },
-      picker = { enabled = true },
+      opts_extend = { 'sources.default' },
     },
-    keys = {
-      -- Leader
-      {
-        '<leader> ',
-        function()
-          Snacks.picker.smart()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search Files by Name',
-      },
-      {
-        '<leader>/',
-        function()
-          Snacks.picker.grep()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search Files by Content',
-      },
-      {
-        '<leader>,',
-        function()
-          Snacks.picker.buffers()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search Buffers',
-      },
-      {
-        '<leader>h',
-        function()
-          Snacks.picker.help()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search [h]elp',
-      },
-      -- B - buffer
-      {
-        '<leader>bb',
-        function()
-          Snacks.picker.buffers()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search [b]uffers',
-      },
-      {
-        '<leader>bc',
-        function()
-          Snacks.bufdelete()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[c]lose Buffer',
-      },
-      {
-        '<leader>bo',
-        function()
-          Snacks.bufdelete.other()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Close [o]ther Buffers',
-      },
-      -- F - file
-      {
-        '<leader>ff',
-        function()
-          Snacks.picker.files { dirs = { vim.fn.expand '%:h' } }
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search [f]iles in CFD',
-      },
-      {
-        '<leader>fF',
-        function()
-          Snacks.picker.files { dirs = { get_git_dir() } }
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search [F]iles in Root',
-      },
-      -- G - git
-      {
-        '<leader>g/',
-        function()
-          Snacks.picker.git_grep()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Search Repo by Content',
-      },
-      -- S - search
-      {
-        '<leader>sa',
-        function()
-          Snacks.picker.autocmds()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[a]utocmds',
-      },
-      {
-        '<leader>sb',
-        function()
-          Snacks.picker.lines()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Current [b]uffer',
-      },
-      {
-        '<leader>sB',
-        function()
-          Snacks.picker.grep_buffers()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Open [B]uffers',
-      },
-      {
-        '<leader>sc',
-        function()
-          Snacks.picker.commands()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[c]ommands',
-      },
-      {
-        '<leader>sd',
-        function()
-          Snacks.picker.diagnostics()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[d]iagnostics',
-      },
-      {
-        '<leader>sh',
-        function()
-          Snacks.picker.help()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[h]elp',
-      },
-      {
-        '<leader>sH',
-        function()
-          Snacks.picker.highlights()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[H]ighlights',
-      },
-      {
-        '<leader>si',
-        function()
-          Snacks.picker.icons()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[i]cons',
-      },
-      {
-        '<leader>sj',
-        function()
-          Snacks.picker.jumps()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[j]umps',
-      },
-      {
-        '<leader>sk',
-        function()
-          Snacks.picker.keymaps()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[k]eymaps',
-      },
-      {
-        '<leader>sl',
-        function()
-          Snacks.picker.loclist()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[l]ocation List',
-      },
-      {
-        '<leader>sm',
-        function()
-          Snacks.picker.marks()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[m]arks',
-      },
-      {
-        '<leader>sM',
-        function()
-          Snacks.picker.man()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[M]an Pages',
-      },
-      {
-        '<leader>sq',
-        function()
-          Snacks.picker.qflist()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[q]uickfix List',
-      },
-      {
-        '<leader>su',
-        function()
-          Snacks.picker.undo()
-        end,
-        mode = { 'n', 'x' },
-        desc = '[u]ndo History',
-      },
-      {
-        '<leader>s/',
-        function()
-          Snacks.picker.grep()
-        end,
-        mode = { 'n', 'x' },
-        desc = 'Files by Content',
-      },
-    },
-  },
 
-  -- Textobjects, ALT moving, Autopairing, Surround macros, f and t extensions,
-  -- Git signals, Comment macros, Nerdfont icons, Which-key popups
-  ---@type LazySpec
-  {
-    'echasnovski/mini.nvim',
-    lazy = false,
-    priority = 1000,
-    dependencies = {
-      'rafamadriz/friendly-snippets',
-    },
-    config = function()
-      require('mini.ai').setup()
-      require('mini.move').setup()
-      require('mini.pairs').setup()
-      require('mini.surround').setup()
-      require('mini.jump').setup()
-      require('mini.diff').setup()
-      require('mini.comment').setup()
-      require('mini.icons').setup()
-      local hipatterns = require 'mini.hipatterns'
-      hipatterns.setup {
-        highlighters = {
-          fixme = { pattern = '%f[%w]FIXME:?%f[^%w:]', group = 'MiniHipatternsFixme' },
-          hack = { pattern = '%f[%w]HACK:?%f[^%w:]', group = 'MiniHipatternsHack' },
-          todo = { pattern = '%f[%w]TODO:?%f[^%w:]', group = 'MiniHipatternsTodo' },
-          note = { pattern = '%f[%w]NOTE:?%f[^%w:]', group = 'MiniHipatternsNote' },
-        },
-      }
-      local miniclue = require 'mini.clue'
-      miniclue.setup {
-        triggers = {
-          -- Leader triggers
-          { mode = 'n', keys = '<Leader>' },
-          { mode = 'x', keys = '<Leader>' },
-
-          -- Built-in completion
-          { mode = 'i', keys = '<C-x>' },
-
-          -- `g` key
-          { mode = 'n', keys = 'g' },
-          { mode = 'x', keys = 'g' },
-
-          -- Marks
-          { mode = 'n', keys = "'" },
-          { mode = 'n', keys = '`' },
-          { mode = 'x', keys = "'" },
-          { mode = 'x', keys = '`' },
-
-          -- Registers
-          { mode = 'n', keys = '"' },
-          { mode = 'x', keys = '"' },
-          { mode = 'i', keys = '<C-r>' },
-          { mode = 'c', keys = '<C-r>' },
-
-          -- Window commands
-          { mode = 'n', keys = '<C-w>' },
-
-          -- `z` key
-          { mode = 'n', keys = 'z' },
-          { mode = 'x', keys = 'z' },
-        },
-
-        clues = {
-          miniclue.gen_clues.builtin_completion(),
-          miniclue.gen_clues.g(),
-          miniclue.gen_clues.marks(),
-          miniclue.gen_clues.registers(),
-          miniclue.gen_clues.windows(),
-          miniclue.gen_clues.z(),
-          { mode = 'n', keys = '<Leader>w', desc = '+[w]indow' },
-          { mode = 'x', keys = '<Leader>w', desc = '+[w]indow' },
-          { mode = 'n', keys = '<leader>t', desc = '+[t]oggle' },
-          { mode = 'x', keys = '<leader>t', desc = '+[t]oggle' },
-          { mode = 'n', keys = '<leader>s', desc = '+[s]earch' },
-          { mode = 'x', keys = '<leader>s', desc = '+[s]earch' },
-          { mode = 'n', keys = '<leader>b', desc = '+[b]uffer' },
-          { mode = 'x', keys = '<leader>b', desc = '+[b]uffer' },
-          { mode = 'n', keys = '<leader>f', desc = '+[f]ile' },
-          { mode = 'x', keys = '<leader>f', desc = '+[f]ile' },
-          { mode = 'n', keys = '<leader>c', desc = '+[c]ode' },
-          { mode = 'x', keys = '<leader>c', desc = '+[c]ode' },
-          { mode = 'n', keys = '<leader>g', desc = '+[g]it' },
-          { mode = 'x', keys = '<leader>g', desc = '+[g]it' },
-        },
-        window = {
-          delay = 0,
-          config = {
-            anchor = 'SE',
-            width = 'auto',
-            row = 'auto',
-            col = 'auto',
+    -- File loading optimizations, Splash screen, Indent markers, Fuzzy finder
+    ---@type LazySpec
+    {
+      'folke/snacks.nvim',
+      lazy = false,
+      priority = 1000,
+      ---@module 'snacks'
+      ---@type snacks.Config
+      opts = {
+        quickfile = { enabled = true },
+        bigfile = { enabled = true },
+        dashboard = { enabled = true },
+        input = { enabled = true },
+        notifier = { enabled = true },
+        bufdelete = { enabled = true },
+        indent = {
+          animate = {
+            enabled = false,
           },
         },
-      }
-      local gen_loader = require('mini.snippets').gen_loader
-      require('mini.snippets').setup {
-        snippets = {
-          gen_loader.from_lang(),
+        picker = { enabled = true },
+      },
+      keys = {
+        -- Leader
+        {
+          '<leader> ',
+          function()
+            Snacks.picker.smart()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search Files by Name',
         },
-      }
-    end,
-  },
-
-  -- Code Runner
-  ---@type LazySpec
-  {
-    'michaelb/sniprun',
-    lazy = true,
-    build = 'sh install.sh 1',
-    cmd = {
-      'SnipRun',
-      'SnipReset',
-      'SnipReplMemoryClean',
-      'SnipInfo',
-      'SnipClose',
-      'SnipLive',
-    },
-    config = function()
-      ---@module 'sniprun'
-      require('sniprun').setup {
-        selected_interpreters = { 'Lua_nvim' },
-        display = {
-          'Classic',
+        {
+          '<leader>/',
+          function()
+            Snacks.picker.grep()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search Files by Content',
         },
-      }
-    end,
-    keys = {
-      { 'S', '<Plug>SnipRun', mode = 'x', desc = 'Run Selected [S]nippet' },
-      { 'S', '<Plug>SnipRunOperator', mode = 'n', desc = 'Run [S]nippet' },
-      { '<leader>cR', '<CMD>%SnipRun<CR>', mode = { 'n', 'x' }, desc = '[R]un in REPL' },
+        {
+          '<leader>,',
+          function()
+            Snacks.picker.buffers()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search Buffers',
+        },
+        {
+          '<leader>h',
+          function()
+            Snacks.picker.help()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search [h]elp',
+        },
+        -- B - buffer
+        {
+          '<leader>bb',
+          function()
+            Snacks.picker.buffers()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search [b]uffers',
+        },
+        {
+          '<leader>bc',
+          function()
+            Snacks.bufdelete()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[c]lose Buffer',
+        },
+        {
+          '<leader>bo',
+          function()
+            Snacks.bufdelete.other()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Close [o]ther Buffers',
+        },
+        -- F - file
+        {
+          '<leader>ff',
+          function()
+            Snacks.picker.files { dirs = { vim.fn.expand '%:h' } }
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search [f]iles in CFD',
+        },
+        {
+          '<leader>fF',
+          function()
+            Snacks.picker.files { dirs = { get_git_dir() } }
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search [F]iles in Root',
+        },
+        -- G - git
+        {
+          '<leader>g/',
+          function()
+            Snacks.picker.git_grep()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Search Repo by Content',
+        },
+        -- S - search
+        {
+          '<leader>sa',
+          function()
+            Snacks.picker.autocmds()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[a]utocmds',
+        },
+        {
+          '<leader>sb',
+          function()
+            Snacks.picker.lines()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Current [b]uffer',
+        },
+        {
+          '<leader>sB',
+          function()
+            Snacks.picker.grep_buffers()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Open [B]uffers',
+        },
+        {
+          '<leader>sc',
+          function()
+            Snacks.picker.commands()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[c]ommands',
+        },
+        {
+          '<leader>sd',
+          function()
+            Snacks.picker.diagnostics()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[d]iagnostics',
+        },
+        {
+          '<leader>sh',
+          function()
+            Snacks.picker.help()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[h]elp',
+        },
+        {
+          '<leader>sH',
+          function()
+            Snacks.picker.highlights()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[H]ighlights',
+        },
+        {
+          '<leader>si',
+          function()
+            Snacks.picker.icons()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[i]cons',
+        },
+        {
+          '<leader>sj',
+          function()
+            Snacks.picker.jumps()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[j]umps',
+        },
+        {
+          '<leader>sk',
+          function()
+            Snacks.picker.keymaps()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[k]eymaps',
+        },
+        {
+          '<leader>sl',
+          function()
+            Snacks.picker.loclist()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[l]ocation List',
+        },
+        {
+          '<leader>sm',
+          function()
+            Snacks.picker.marks()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[m]arks',
+        },
+        {
+          '<leader>sM',
+          function()
+            Snacks.picker.man()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[M]an Pages',
+        },
+        {
+          '<leader>sq',
+          function()
+            Snacks.picker.qflist()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[q]uickfix List',
+        },
+        {
+          '<leader>su',
+          function()
+            Snacks.picker.undo()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[u]ndo History',
+        },
+        {
+          '<leader>s/',
+          function()
+            Snacks.picker.grep()
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Files by Content',
+        },
+      },
     },
-  },
 
-  -- Yank Ring
-  ---@type LazySpec
-  {
-    'gbprod/yanky.nvim',
-    lazy = true,
-    dependencies = 'folke/snacks.nvim',
-    ---@module 'yanky'
-    opts = {
-      ring = {
-        storage = 'shada',
+    -- Textobjects, ALT moving, Autopairing, Surround macros, f and t extensions,
+    -- Git signals, Comment macros, Nerdfont icons, Which-key popups
+    ---@type LazySpec
+    {
+      'echasnovski/mini.nvim',
+      lazy = false,
+      priority = 1000,
+      dependencies = {
+        'rafamadriz/friendly-snippets',
       },
-      highlight = {
-        timer = 125,
-      },
-      textobj = {
-        enabled = true,
-      },
-    },
-    keys = {
-      { 'y', '<Plug>(YankyYank)', mode = { 'n', 'x' }, desc = 'Yank text' },
-      { 'p', '<Plug>(YankyPutAfter)', mode = { 'n', 'x' }, desc = 'Put yanked text after cursor' },
-      { 'P', '<Plug>(YankyPutBefore)', mode = { 'n', 'x' }, desc = 'Put yanked text before cursor' },
-      { 'gp', '<Plug>(YankyGPutAfter)', mode = { 'n', 'x' }, desc = 'Put yanked text after selection' },
-      { 'gP', '<Plug>(YankyGPutBefore)', mode = { 'n', 'x' }, desc = 'Put yanked text before selection' },
-      { '<c-p>', '<Plug>(YankyPreviousEntry)', desc = 'Select previous entry through yank history' },
-      { '<c-n>', '<Plug>(YankyNextEntry)', desc = 'Select next entry through yank history' },
-      { ']p', '<Plug>(YankyPutIndentAfterLinewise)', desc = 'Put indented after cursor (linewise)' },
-      { '[p', '<Plug>(YankyPutIndentBeforeLinewise)', desc = 'Put indented before cursor (linewise)' },
-      { ']P', '<Plug>(YankyPutIndentAfterLinewise)', desc = 'Put indented after cursor (linewise)' },
-      { '[P', '<Plug>(YankyPutIndentBeforeLinewise)', desc = 'Put indented before cursor (linewise)' },
-      { '>p', '<Plug>(YankyPutIndentAfterShiftRight)', desc = 'Put and indent right' },
-      { '<p', '<Plug>(YankyPutIndentAfterShiftLeft)', desc = 'Put and indent left' },
-      { '>P', '<Plug>(YankyPutIndentBeforeShiftRight)', desc = 'Put before and indent right' },
-      { '<P', '<Plug>(YankyPutIndentBeforeShiftLeft)', desc = 'Put before and indent left' },
-      { '=p', '<Plug>(YankyPutAfterFilter)', desc = 'Put after applying a filter' },
-      { '=P', '<Plug>(YankyPutBeforeFilter)', desc = 'Put before applying a filter' },
-      {
-        '<leader>p',
-        function()
-          Snacks.picker.yanky()
-        end,
-        desc = '[p]ut from Yankring',
-      },
-    },
-  },
+      config = function()
+        require('mini.ai').setup()
+        require('mini.move').setup()
+        require('mini.pairs').setup()
+        require('mini.surround').setup()
+        require('mini.jump').setup()
+        require('mini.diff').setup()
+        require('mini.comment').setup()
+        require('mini.icons').setup()
+        local hipatterns = require 'mini.hipatterns'
+        hipatterns.setup {
+          highlighters = {
+            fixme = { pattern = '%f[%w]FIXME:?%f[^%w:]', group = 'MiniHipatternsFixme' },
+            hack = { pattern = '%f[%w]HACK:?%f[^%w:]', group = 'MiniHipatternsHack' },
+            todo = { pattern = '%f[%w]TODO:?%f[^%w:]', group = 'MiniHipatternsTodo' },
+            note = { pattern = '%f[%w]NOTE:?%f[^%w:]', group = 'MiniHipatternsNote' },
+          },
+        }
+        local miniclue = require 'mini.clue'
+        miniclue.setup {
+          triggers = {
+            -- Leader triggers
+            { mode = 'n', keys = '<Leader>' },
+            { mode = 'x', keys = '<Leader>' },
 
-  -- File Manager
-  ---@type LazySpec
-  {
-    'stevearc/oil.nvim',
-    lazy = false,
-    ---@module 'oil'
-    opts = {
-      default_file_explorer = true,
-      delete_to_trash = true,
-      watch_for_changes = true,
-      columns = {
-        'icon',
-        'permissions',
-      },
-      keymaps = {
-        ['L'] = { 'actions.select', mode = 'n' },
-        ['H'] = { 'actions.parent', mode = 'n' },
-        ['J'] = 'actions.open_cwd',
-        ['K'] = 'actions.cd',
-        ['<A-h>'] = 'actions.toggle_hidden',
-      },
-    },
-    keys = {
-      { '<leader>-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
-      { '-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
-      { '<leader>fb', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = '[b]rowse Files in CFD' },
-      {
-        '<leader>fB',
-        function()
-          require('oil').open(get_git_dir())
-        end,
-        mode = { 'n', 'x' },
-        desc = '[B]rowse Files in Root',
-      },
-    },
-  },
+            -- Built-in completion
+            { mode = 'i', keys = '<C-x>' },
 
-  -- Git Client
-  ---@type LazySpec
-  {
-    'tpope/vim-fugitive',
-    lazy = true,
-    cmd = {
-      'G',
-      'Git',
-      'Ggrep',
-      'Gclog',
-      'Gllog',
-      'Gcd',
-      'Glcd',
-      'Gedit',
-      'Gsplit',
-      'Gvsplit',
-      'Gtabedit',
-      'Gpedit',
-      'Gdrop',
-      'Gread',
-      'Gwrite',
-      'Gwq',
-      'Gdiffsplit',
-      'Gvdiffsplit',
-      'Ghdiffsplit',
-      'GMove',
-      'GRename',
-      'GDelete',
-      'GRemove',
-      'GUnlink',
-      'GBrowse',
+            -- `g` key
+            { mode = 'n', keys = 'g' },
+            { mode = 'x', keys = 'g' },
+
+            -- Marks
+            { mode = 'n', keys = "'" },
+            { mode = 'n', keys = '`' },
+            { mode = 'x', keys = "'" },
+            { mode = 'x', keys = '`' },
+
+            -- Registers
+            { mode = 'n', keys = '"' },
+            { mode = 'x', keys = '"' },
+            { mode = 'i', keys = '<C-r>' },
+            { mode = 'c', keys = '<C-r>' },
+
+            -- Window commands
+            { mode = 'n', keys = '<C-w>' },
+
+            -- `z` key
+            { mode = 'n', keys = 'z' },
+            { mode = 'x', keys = 'z' },
+          },
+
+          clues = {
+            miniclue.gen_clues.builtin_completion(),
+            miniclue.gen_clues.g(),
+            miniclue.gen_clues.marks(),
+            miniclue.gen_clues.registers(),
+            miniclue.gen_clues.windows(),
+            miniclue.gen_clues.z(),
+            { mode = 'n', keys = '<Leader>w', desc = '+[w]indow' },
+            { mode = 'x', keys = '<Leader>w', desc = '+[w]indow' },
+            { mode = 'n', keys = '<leader>t', desc = '+[t]oggle' },
+            { mode = 'x', keys = '<leader>t', desc = '+[t]oggle' },
+            { mode = 'n', keys = '<leader>s', desc = '+[s]earch' },
+            { mode = 'x', keys = '<leader>s', desc = '+[s]earch' },
+            { mode = 'n', keys = '<leader>b', desc = '+[b]uffer' },
+            { mode = 'x', keys = '<leader>b', desc = '+[b]uffer' },
+            { mode = 'n', keys = '<leader>f', desc = '+[f]ile' },
+            { mode = 'x', keys = '<leader>f', desc = '+[f]ile' },
+            { mode = 'n', keys = '<leader>c', desc = '+[c]ode' },
+            { mode = 'x', keys = '<leader>c', desc = '+[c]ode' },
+            { mode = 'n', keys = '<leader>g', desc = '+[g]it' },
+            { mode = 'x', keys = '<leader>g', desc = '+[g]it' },
+          },
+          window = {
+            delay = 0,
+            config = {
+              anchor = 'SE',
+              width = 'auto',
+            },
+          },
+        }
+        local gen_loader = require('mini.snippets').gen_loader
+        require('mini.snippets').setup {
+          snippets = {
+            gen_loader.from_lang(),
+          },
+        }
+      end,
     },
-    config = function()
-      vim.api.nvim_create_autocmd('BufWinEnter', {
-        pattern = '*/\\.git/*',
-        callback = function(event)
-          if vim.bo[event.buf].filetype == 'fugitive' then
-            vim.keymap.set('n', 'S', function()
-              local cwd = vim.fn.getcwd(-1, 0)
-              vim.cmd [[Glcd]]
-              vim.cmd [[Git add .]]
-              vim.cmd('lcd ' .. cwd)
-            end, { buffer = true, desc = 'Stage All Files' })
+
+    -- Code Runner
+    ---@type LazySpec
+    {
+      'michaelb/sniprun',
+      lazy = true,
+      build = 'sh install.sh 1',
+      cmd = {
+        'SnipRun',
+        'SnipReset',
+        'SnipReplMemoryClean',
+        'SnipInfo',
+        'SnipClose',
+        'SnipLive',
+      },
+      config = function()
+        ---@module 'sniprun'
+        require('sniprun').setup {
+          selected_interpreters = { 'Lua_nvim' },
+          display = {
+            'Classic',
+          },
+        }
+      end,
+      keys = {
+        { 'S', '<Plug>SnipRun', mode = 'x', desc = 'Run Selected [S]nippet' },
+        { 'S', '<Plug>SnipRunOperator', mode = 'n', desc = 'Run [S]nippet' },
+        { '<leader>cR', '<CMD>%SnipRun<CR>', mode = { 'n', 'x' }, desc = '[R]un in REPL' },
+      },
+    },
+
+    -- Yank Ring
+    ---@type LazySpec
+    {
+      'gbprod/yanky.nvim',
+      lazy = true,
+      dependencies = 'folke/snacks.nvim',
+      ---@module 'yanky'
+      opts = {
+        ring = {
+          storage = 'shada',
+        },
+        highlight = {
+          timer = 125,
+        },
+        textobj = {
+          enabled = true,
+        },
+      },
+      keys = {
+        { 'y', '<Plug>(YankyYank)', mode = { 'n', 'x' }, desc = 'Yank text' },
+        { 'p', '<Plug>(YankyPutAfter)', mode = { 'n', 'x' }, desc = 'Put yanked text after cursor' },
+        { 'P', '<Plug>(YankyPutBefore)', mode = { 'n', 'x' }, desc = 'Put yanked text before cursor' },
+        { 'gp', '<Plug>(YankyGPutAfter)', mode = { 'n', 'x' }, desc = 'Put yanked text after selection' },
+        { 'gP', '<Plug>(YankyGPutBefore)', mode = { 'n', 'x' }, desc = 'Put yanked text before selection' },
+        { '<c-p>', '<Plug>(YankyPreviousEntry)', desc = 'Select previous entry through yank history' },
+        { '<c-n>', '<Plug>(YankyNextEntry)', desc = 'Select next entry through yank history' },
+        { ']p', '<Plug>(YankyPutIndentAfterLinewise)', desc = 'Put indented after cursor (linewise)' },
+        { '[p', '<Plug>(YankyPutIndentBeforeLinewise)', desc = 'Put indented before cursor (linewise)' },
+        { ']P', '<Plug>(YankyPutIndentAfterLinewise)', desc = 'Put indented after cursor (linewise)' },
+        { '[P', '<Plug>(YankyPutIndentBeforeLinewise)', desc = 'Put indented before cursor (linewise)' },
+        { '>p', '<Plug>(YankyPutIndentAfterShiftRight)', desc = 'Put and indent right' },
+        { '<p', '<Plug>(YankyPutIndentAfterShiftLeft)', desc = 'Put and indent left' },
+        { '>P', '<Plug>(YankyPutIndentBeforeShiftRight)', desc = 'Put before and indent right' },
+        { '<P', '<Plug>(YankyPutIndentBeforeShiftLeft)', desc = 'Put before and indent left' },
+        { '=p', '<Plug>(YankyPutAfterFilter)', desc = 'Put after applying a filter' },
+        { '=P', '<Plug>(YankyPutBeforeFilter)', desc = 'Put before applying a filter' },
+        {
+          '<leader>p',
+          function()
+            Snacks.picker.yanky()
+          end,
+          desc = '[p]ut from Yankring',
+        },
+      },
+    },
+
+    -- File Manager
+    ---@type LazySpec
+    {
+      'stevearc/oil.nvim',
+      lazy = false,
+      ---@module 'oil'
+      opts = {
+        default_file_explorer = true,
+        delete_to_trash = true,
+        watch_for_changes = true,
+        columns = {
+          'icon',
+          'permissions',
+        },
+        keymaps = {
+          ['L'] = { 'actions.select', mode = 'n' },
+          ['H'] = { 'actions.parent', mode = 'n' },
+          ['J'] = 'actions.open_cwd',
+          ['K'] = 'actions.cd',
+          ['<A-h>'] = 'actions.toggle_hidden',
+        },
+      },
+      keys = {
+        { '<leader>-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
+        { '-', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = 'Browse Files in CFD' },
+        { '<leader>fb', '<CMD>Oil<CR>', mode = { 'n', 'x' }, desc = '[b]rowse Files in CFD' },
+        {
+          '<leader>fB',
+          function()
+            require('oil').open(get_git_dir())
+          end,
+          mode = { 'n', 'x' },
+          desc = '[B]rowse Files in Root',
+        },
+      },
+    },
+
+    -- Debugger
+    ---@type LazySpec
+    {
+      'mfussenegger/nvim-dap',
+      lazy = false,
+      dependencies = 'folke/snacks.nvim',
+      cmd = {
+        'DapContinue',
+        'DapDisconnect',
+        'DapNew',
+        'DapTerminate',
+        'DapRestartFrame',
+        'DapStepInto',
+        'DapStepOut',
+        'DapStepOver',
+        'DapPause',
+        'DapEval',
+        'DapToggleRepl',
+        'DapClearBreakpoints',
+        'DapToggleBreakpoint',
+        'DapSetLogLevel',
+        'DapShowLog',
+      },
+      config = function()
+        ---@module 'dap'
+        local dap = require 'dap'
+        ---@module 'dap.utils'
+        local utils = require 'dap.utils'
+
+        vim.fn.sign_define('DapBreakpoint', { text = '', texthl = '@constant' })
+        vim.fn.sign_define('DapBreakpointCondition', { text = '', texthl = '@constant' })
+        vim.fn.sign_define('DapLogPoint', { text = '', texthl = '@constant' })
+        vim.fn.sign_define('DapStopped', { text = '', texthl = '@constant' })
+        vim.fn.sign_define('DapBreakpointRejected', { text = '', texthl = 'Error' })
+
+        local exec_pick = function()
+          local co = coroutine.running()
+          ---@module 'snacks'
+          Snacks.picker.files {
+            title = 'Executable',
+            cmd = 'fd',
+            args = { '-tx', '--color', 'never' },
+            confirm = function(picker, item)
+              coroutine.resume(co, picker, item.text)
+            end,
+            on_close = function(picker)
+              coroutine.resume(co, picker, nil)
+            end,
+          }
+          local picker, elf = coroutine.yield()
+          if elf then
+            picker:close()
           end
-        end,
-      })
-      vim.api.nvim_create_autocmd('WinLeave', {
-        pattern = '*/\\.git/*',
-        callback = function(event)
-          if vim.bo[event.buf].filetype == 'fugitive' then
+          return elf
+        end
+
+        local args_pick = function()
+          return utils.splitstr(vim.fn.input 'Arguments: ')
+        end
+
+        dap.defaults.fallback.auto_continue_if_many_stopped = false
+        -- C Family
+        dap.defaults.c.autostart = 'Launch w/ Args'
+        dap.adapters.gdb = {
+          type = 'executable',
+          command = 'gdb',
+          args = { '--quiet', '--interpreter=dap', '--eval-command', 'set print pretty on' },
+        }
+        dap.configurations.c = {
+          {
+            name = 'Launch',
+            type = 'gdb',
+            request = 'launch',
+            program = exec_pick,
+            cwd = '${workspaceFolder}',
+            stopAtBeginningOfMainSubprogram = false,
+          },
+          {
+            name = 'Launch w/ Args',
+            type = 'gdb',
+            request = 'launch',
+            config = function()
+              local p = exec_pick()
+              if not p then
+                return dap.ABORT
+              end
+              local r = args_pick()
+              return {
+                program = p,
+                args = r,
+                cwd = '${workspaceFolder}',
+                stopAtBeginningOfMainSubprogram = false,
+              }
+            end,
+          },
+          {
+            name = 'Attach to Process',
+            type = 'gdb',
+            request = 'attach',
+            program = function()
+              return vim.fn.input('Path to Executable: ', vim.fn.getcwd() .. '/', 'file')
+            end,
+            pid = function()
+              local name = vim.fn.input 'Process Name: '
+              return require('dap.utils').pick_process { filter = name }
+            end,
+            cwd = '${workspaceFolder}',
+          },
+        }
+      end,
+    },
+    {
+      -- 'Jorenar/nvim-dap-disasm',
+      'Catzns/nvim-dap-disasm',
+      dev = true,
+      lazy = true,
+      cmd = {
+        'DapViewOpen',
+        'DapViewClose',
+        'DapViewToggle',
+        'DapViewWatch',
+        'DapViewJump',
+        'DapViewShow',
+        'DapViewNavigate',
+        'DapDisasm',
+        'DapDisasmSetMemref',
+      },
+      opts = {
+        dapui_register = false,
+        dapview = {
+          keymap = 'A',
+          label = '[A]ssembly',
+          short_label = '󰒓 [A]',
+        },
+      },
+      dependencies = {
+        'igorlfs/nvim-dap-view',
+        lazy = true,
+        dependencies = 'mfussenegger/nvim-dap',
+        ---@module 'dap-view'
+        ---@type dapview.Config
+        opts = {
+          winbar = {
+            sections = { 'repl', 'scopes', 'watches', 'exceptions', 'breakpoints', 'threads', 'disassembly' },
+            default_section = 'repl',
+            base_sections = {
+              repl = {
+                label = '[R]EPL',
+              },
+              scopes = {
+                label = '[S]copes',
+              },
+              watches = {
+                label = '[W]atches',
+              },
+              exceptions = {
+                label = '[E]xceptions',
+              },
+              breakpoints = {
+                label = '[B]reakpoints',
+              },
+              threads = {
+                label = '[T]hreads',
+              },
+            },
+          },
+          auto_toggle = true,
+          follow_tab = true,
+        },
+      },
+    },
+
+    -- Git Client
+    ---@type LazySpec
+    {
+      'tpope/vim-fugitive',
+      lazy = true,
+      cmd = {
+        'G',
+        'Git',
+        'Ggrep',
+        'Gclog',
+        'Gllog',
+        'Gcd',
+        'Glcd',
+        'Gedit',
+        'Gsplit',
+        'Gvsplit',
+        'Gtabedit',
+        'Gpedit',
+        'Gdrop',
+        'Gread',
+        'Gwrite',
+        'Gwq',
+        'Gdiffsplit',
+        'Gvdiffsplit',
+        'Ghdiffsplit',
+        'GMove',
+        'GRename',
+        'GDelete',
+        'GRemove',
+        'GUnlink',
+        'GBrowse',
+      },
+      config = function()
+        vim.api.nvim_create_autocmd('BufWinEnter', {
+          pattern = '*/\\.git/*',
+          callback = function(event)
+            if vim.bo[event.buf].filetype == 'fugitive' then
+              vim.keymap.set('n', 'S', function()
+                local cwd = vim.fn.getcwd(-1, 0)
+                vim.cmd [[Glcd]]
+                vim.cmd [[Git add .]]
+                vim.cmd('lcd ' .. cwd)
+              end, { buffer = true, desc = 'Stage All Files' })
+            end
+          end,
+        })
+        vim.api.nvim_create_autocmd('FileType', {
+          pattern = 'git',
+          callback = function()
             vim.api.nvim_win_close(0, false)
-          end
-        end,
-      })
-    end,
-    keys = {
-      { '<leader>gg', '<CMD>Git<CR>', mode = { 'n', 'x' }, desc = 'Open [g]it Status' },
-      { '<leader>gc', '<CMD>Gcd<CR>', mode = { 'n', 'x' }, desc = '[c]hange Directory to Repo' },
-      { '<leader>gr', '<CMD>Gread<CR>', mode = { 'n', 'x' }, desc = '[r]evert to Last Commit' },
-      { '<leader>gw', '<CMD>Gwrite<CR>', mode = { 'n', 'x' }, desc = '[w]rite & Stage File' },
-      { '<leader>gd', '<CMD>Gdiffsplit<CR>', mode = { 'n', 'x' }, desc = '[d]iff Current File' },
+          end,
+        })
+      end,
+      keys = {
+        { '<leader>gg', '<CMD>Git<CR>', mode = { 'n', 'x' }, desc = 'Open [g]it Status' },
+        { '<leader>gc', '<CMD>Gcd<CR>', mode = { 'n', 'x' }, desc = '[c]hange Directory to Repo' },
+        { '<leader>gr', '<CMD>Gread<CR>', mode = { 'n', 'x' }, desc = '[r]evert to Last Commit' },
+        { '<leader>gw', '<CMD>Gwrite<CR>', mode = { 'n', 'x' }, desc = '[w]rite & Stage File' },
+        { '<leader>gd', '<CMD>Gdiffsplit<CR>', mode = { 'n', 'x' }, desc = '[d]iff Current File' },
+      },
     },
-  },
 
-  -- Diagnostics
-  ---@type LazySpec
-  {
-    'folke/trouble.nvim',
-    lazy = true,
-    cmd = 'Trouble',
-    config = function()
-      ---@type trouble.Config
-      require('trouble').setup {
-        auto_close = true,
-        focus = true,
-      }
-      vim.api.nvim_create_autocmd('WinLeave', {
-        callback = function(event)
-          if vim.bo[event.buf].filetype == 'trouble' then
-            vim.cmd [[Trouble close]]
-          end
-        end,
-      })
-    end,
-    keys = {
-      { '<leader>cc', '<CMD>Trouble diagnostics toggle filter.buf=0<CR>', mode = { 'n', 'x' }, desc = '[c]ode Diagnostics' },
-      { '<leader>cd', '<CMD>Trouble lsp_declarations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [d]eclarations' },
-      { '<leader>cD', '<CMD>Trouble lsp_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [D]efinitions' },
-      { '<leader>ct', '<CMD>Trouble lsp_type_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [t]ype Defs' },
-      { '<leader>cs', '<CMD>Trouble lsp_document_symbols toggle win.position=right<CR>', mode = { 'n', 'x' }, desc = 'LSP [s]ymbols' },
-      { '<leader>cr', '<CMD>Trouble lsp_references toggle', mode = { 'n', 'x' }, desc = 'LSP [r]eferences' },
-      { '<leader>ci', '<CMD>Trouble lsp_implementations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [i]mplementations' },
+    -- Diagnostics
+    ---@type LazySpec
+    {
+      'folke/trouble.nvim',
+      lazy = true,
+      cmd = 'Trouble',
+      config = function()
+        ---@type trouble.Config
+        require('trouble').setup {
+          auto_close = true,
+          focus = true,
+        }
+        vim.api.nvim_create_autocmd('WinLeave', {
+          callback = function(event)
+            if vim.bo[event.buf].filetype == 'trouble' then
+              vim.cmd [[Trouble close]]
+            end
+          end,
+        })
+      end,
+      keys = {
+        { '<leader>cc', '<CMD>Trouble diagnostics toggle filter.buf=0<CR>', mode = { 'n', 'x' }, desc = '[c]ode Diagnostics' },
+        { '<leader>cd', '<CMD>Trouble lsp_declarations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [d]eclarations' },
+        { '<leader>cD', '<CMD>Trouble lsp_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [D]efinitions' },
+        { '<leader>ct', '<CMD>Trouble lsp_type_definitions toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [t]ype Defs' },
+        { '<leader>cs', '<CMD>Trouble lsp_document_symbols toggle win.position=right<CR>', mode = { 'n', 'x' }, desc = 'LSP [s]ymbols' },
+        { '<leader>cr', '<CMD>Trouble lsp_references toggle', mode = { 'n', 'x' }, desc = 'LSP [r]eferences' },
+        { '<leader>ci', '<CMD>Trouble lsp_implementations toggle<CR>', mode = { 'n', 'x' }, desc = 'LSP [i]mplementations' },
+      },
     },
-  },
 
-  -- Color Picker
-  ---@type LazySpec
-  {
-    'uga-rosa/ccc.nvim',
-    lazy = true,
-    cmd = {
-      'CccPick',
-      'CccConvert',
-      'CccHighlighterEnable',
-      'CccHighlighterDisable',
-      'CccHighlighterToggle',
+    -- Color Picker
+    ---@type LazySpec
+    {
+      'uga-rosa/ccc.nvim',
+      lazy = true,
+      cmd = {
+        'CccPick',
+        'CccConvert',
+        'CccHighlighterEnable',
+        'CccHighlighterDisable',
+        'CccHighlighterToggle',
+      },
+      config = function()
+        local ccc = require 'ccc'
+        local mapping = ccc.mapping
+        ccc.setup {
+          empty_point_bg = false,
+          point_char = '',
+          point_color = '',
+          point_color_on_dark = '#c0caf5',
+          point_color_on_light = '#1a1b26',
+          highlighter = {
+            auto_enable = true,
+            lsp = true,
+          },
+          recognize = {
+            input = true,
+            output = true,
+          },
+          inputs = {
+            ccc.input.rgb,
+            ccc.input.hsv,
+            ccc.input.hsluv,
+            ccc.input.cmyk,
+          },
+          outputs = {
+            ccc.output.hex,
+            ccc.output.css_rgb,
+            ccc.output.css_hsl,
+            ccc.output.css_oklab,
+          },
+          mappings = {
+            ['<Esc>'] = mapping.quit,
+          },
+        }
+      end,
+      keys = {
+        { '<C-c>', '<CMD>CccPick<CR>', mode = 'n', desc = 'Open Ccc' },
+      },
     },
-    config = function()
-      local ccc = require 'ccc'
-      local mapping = ccc.mapping
-      ccc.setup {
-        empty_point_bg = false,
-        point_char = '',
-        point_color = '',
-        point_color_on_dark = '#c0caf5',
-        point_color_on_light = '#1a1b26',
-        highlighter = {
-          auto_enable = true,
-          lsp = true,
-        },
-        recognize = {
-          input = true,
-          output = true,
-        },
-        inputs = {
-          ccc.input.rgb,
-          ccc.input.hsv,
-          ccc.input.hsluv,
-          ccc.input.cmyk,
-        },
-        outputs = {
-          ccc.output.hex,
-          ccc.output.css_rgb,
-          ccc.output.css_hsl,
-          ccc.output.css_oklab,
-        },
-        mappings = {
-          ['<Esc>'] = mapping.quit,
-        },
-      }
-    end,
-    keys = {
-      { '<C-c>', '<CMD>CccPick<CR>', mode = 'n', desc = 'Open Ccc' },
-    },
-  },
 
-  -- Pretty UI
-  ---@type LazySpec
-  {
-    'folke/noice.nvim',
-    lazy = true,
-    event = 'VeryLazy',
-    config = function()
-      local noice = require 'noice'
-      noice.setup {
+    -- Pretty UI
+    ---@type LazySpec
+    {
+      'folke/noice.nvim',
+      lazy = true,
+      event = 'VeryLazy',
+      config = function()
+        local noice = require 'noice'
+        noice.setup {
+          presets = {
+            command_palette = true,
+            long_message_to_split = true,
+          },
+        }
+        require('lualine').setup {
+          sections = {
+            lualine_x = {
+              {
+                noice.api.statusline.mode.get,
+                cond = noice.api.statusline.mode.has,
+                color = { fg = '#e0af68' },
+              },
+              'encoding',
+              'filetype',
+            },
+          },
+        }
+      end,
+      opts = {
         presets = {
           command_palette = true,
           long_message_to_split = true,
         },
-      }
-      require('lualine').setup {
-        sections = {
-          lualine_x = {
-            {
-              noice.api.statusline.mode.get,
-              cond = noice.api.statusline.mode.has,
-              color = { fg = '#e0af68' },
-            },
-            'encoding',
-            'filetype',
+        routes = {
+          {
+            view = 'notify',
+            filter = { event = 'msg_showmode' },
           },
         },
-      }
-    end,
-    opts = {
-      presets = {
-        command_palette = true,
-        long_message_to_split = true,
       },
-      routes = {
+      dependencies = {
         {
-          view = 'notify',
-          filter = { event = 'msg_showmode' },
+          'MunifTanjim/nui.nvim',
+          lazy = true,
+          event = 'VeryLazy',
+        },
+        'folke/snacks.nvim',
+      },
+    },
+
+    -- Statusline
+    ---@type LazySpec
+    {
+      'nvim-lualine/lualine.nvim',
+      lazy = true,
+      event = 'VeryLazy',
+      opts = {
+        options = {
+          theme = 'tokyonight',
+          component_separators = {
+            left = '',
+            right = '',
+          },
+          section_separators = {
+            left = '',
+            right = '',
+          },
         },
       },
     },
-    dependencies = {
-      {
-        'MunifTanjim/nui.nvim',
-        lazy = true,
-        event = 'VeryLazy',
-      },
-      'folke/snacks.nvim',
+
+    -- Colorscheme
+    ---@type LazySpec
+    {
+      'folke/tokyonight.nvim',
+      lazy = false,
+      priority = 9999,
+      config = function()
+        require('tokyonight').setup {
+          style = 'night',
+          dim_inactive = true,
+        }
+        vim.cmd 'colorscheme tokyonight'
+      end,
     },
   },
-
-  -- Statusline
-  ---@type LazySpec
-  {
-    'nvim-lualine/lualine.nvim',
-    lazy = true,
-    event = 'VeryLazy',
-    opts = {
-      options = {
-        theme = 'tokyonight',
-        component_separators = {
-          left = '',
-          right = '',
-        },
-        section_separators = {
-          left = '',
-          right = '',
-        },
-      },
-    },
-  },
-
-  -- Colorscheme
-  ---@type LazySpec
-  {
-    'folke/tokyonight.nvim',
-    lazy = false,
-    priority = 9999,
-    config = function()
-      require('tokyonight').setup {
-        style = 'night',
-        dim_inactive = true,
-      }
-      vim.cmd 'colorscheme tokyonight'
-    end,
+  dev = {
+    path = '~/Code/Neovim',
+    patterns = { 'catzs', 'Catzs', 'Catzns' },
   },
   install = {
     colorscheme = { 'tokyonight' },
