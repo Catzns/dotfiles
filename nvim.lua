@@ -64,7 +64,7 @@ end
 
 local function get_git_dir()
   local gitdir = vim.fn.finddir('.git/..', '.;')
-  return (gitdir == '' and vim.cmd [[pwd]]) or gitdir
+  return (gitdir == '' and vim.fn.getcwd()) or gitdir
 end
 
 -- [[ KEYMAPS ]]
@@ -92,6 +92,7 @@ end, { expr = true, noremap = true })
 -- Leader menu
 vim.keymap.set({ 'n', 'x' }, '<leader>l', '<CMD>Lazy<CR>', { desc = '[l]azy Package Manager' })
 vim.keymap.set({ 'n', 'x' }, '<leader>q', '<CMD>q<CR>', { desc = '[q]uit Neovim' })
+vim.keymap.set({ 'n', 'x' }, '<leader>m', '<CMD>messages<CR>', { desc = 'Open [m]essages' })
 
 -- B - buffer
 vim.keymap.set({ 'n', 'x' }, '<leader>bC', '<CMD>hide<CR>', { desc = '[C]lose Buffer & Window' })
@@ -336,7 +337,7 @@ require('lazy').setup {
             print((fmt and 'Autoformatting enabled') or 'Autoformatting disabled')
           end,
           mode = { 'n', 'x' },
-          desc = 'Toggle Auto[f]ormat in Buffer',
+          desc = 'Toggle Auto[f]ormat',
         },
       },
     },
@@ -876,8 +877,98 @@ require('lazy').setup {
     ---@type LazySpec
     {
       'mfussenegger/nvim-dap',
-      lazy = false,
-      dependencies = 'folke/snacks.nvim',
+      lazy = true,
+      dependencies = {
+        'folke/snacks.nvim',
+        {
+          'theHamsta/nvim-dap-virtual-text',
+          lazy = true,
+          cmd = {
+            'DapVirtualTextEnable',
+            'DapVirtualTextDisable',
+            'DapVirtualTextToggle',
+            'DapVirtualTextForceRefresh',
+          },
+          opts = {},
+        },
+        {
+          -- 'Jorenar/nvim-dap-disasm',
+          'Catzns/nvim-dap-disasm',
+          dev = true,
+          lazy = true,
+          cmd = {
+            'DapDisasm',
+            'DapDisasmSetMemref',
+          },
+          opts = {
+            dapui_register = false,
+            dapview = {
+              keymap = 'A',
+              label = '[A]ssembly',
+              short_label = '󰒓 [A]',
+            },
+          },
+          dependencies = {
+            'igorlfs/nvim-dap-view',
+            lazy = true,
+            cmd = {
+              'DapViewOpen',
+              'DapViewClose',
+              'DapViewToggle',
+              'DapViewWatch',
+              'DapViewJump',
+              'DapViewShow',
+              'DapViewNavigate',
+            },
+            config = function()
+              ---@module 'dap-view'
+              local dapview = require 'dap-view'
+              local dap = require 'dap'
+              ---@type dapview.Config
+              dapview.setup {
+                winbar = {
+                  sections = { 'repl', 'scopes', 'watches', 'exceptions', 'breakpoints', 'threads', 'disassembly' },
+                  default_section = 'repl',
+                  base_sections = {
+                    repl = {
+                      label = '[R]EPL',
+                    },
+                    scopes = {
+                      label = '[S]copes',
+                    },
+                    watches = {
+                      label = '[W]atches',
+                    },
+                    exceptions = {
+                      label = '[E]xceptions',
+                    },
+                    breakpoints = {
+                      label = '[B]reakpoints',
+                    },
+                    threads = {
+                      label = '[T]hreads',
+                    },
+                  },
+                },
+                auto_toggle = true,
+                follow_tab = true,
+              }
+              vim.api.nvim_create_autocmd({ 'FileType' }, {
+                pattern = { 'dap-view', 'dap-view-term', 'dap-repl', 'dap_disassembly' },
+                callback = function(event)
+                  vim.keymap.set('n', 'q', '<C-w>q', { buffer = event.buf })
+                end,
+              })
+              dap.listeners.after.event_exited.dapview = function()
+                dapview.close()
+              end
+              dap.listeners.after.disconnect.dapview = function()
+                dapview.close()
+              end
+            end,
+          },
+        },
+      },
       cmd = {
         'DapContinue',
         'DapDisconnect',
@@ -947,33 +1038,35 @@ require('lazy').setup {
             request = 'launch',
             program = exec_pick,
             cwd = '${workspaceFolder}',
-            stopAtBeginningOfMainSubprogram = false,
+            stopAtBeginningOfMainSubprogram = true,
           },
-          {
+          setmetatable({
             name = 'Launch w/ Args',
             type = 'gdb',
             request = 'launch',
-            config = function()
+          }, {
+            __call = function()
               local p = exec_pick()
               if not p then
-                return dap.ABORT
+                return { abort = dap.ABORT }
               end
               local r = args_pick()
               return {
+                name = 'Launch w/ Args',
+                type = 'gdb',
+                request = 'launch',
                 program = p,
                 args = r,
                 cwd = '${workspaceFolder}',
-                stopAtBeginningOfMainSubprogram = false,
+                stopAtBeginningOfMainSubprogram = true,
               }
             end,
-          },
+          }),
           {
             name = 'Attach to Process',
             type = 'gdb',
             request = 'attach',
-            program = function()
-              return vim.fn.input('Path to Executable: ', vim.fn.getcwd() .. '/', 'file')
-            end,
+            program = exec_pick,
             pid = function()
               local name = vim.fn.input 'Process Name: '
               return require('dap.utils').pick_process { filter = name }
@@ -982,66 +1075,6 @@ require('lazy').setup {
           },
         }
       end,
-    },
-    {
-      -- 'Jorenar/nvim-dap-disasm',
-      'Catzns/nvim-dap-disasm',
-      dev = true,
-      lazy = true,
-      cmd = {
-        'DapViewOpen',
-        'DapViewClose',
-        'DapViewToggle',
-        'DapViewWatch',
-        'DapViewJump',
-        'DapViewShow',
-        'DapViewNavigate',
-        'DapDisasm',
-        'DapDisasmSetMemref',
-      },
-      opts = {
-        dapui_register = false,
-        dapview = {
-          keymap = 'A',
-          label = '[A]ssembly',
-          short_label = '󰒓 [A]',
-        },
-      },
-      dependencies = {
-        'igorlfs/nvim-dap-view',
-        lazy = true,
-        dependencies = 'mfussenegger/nvim-dap',
-        ---@module 'dap-view'
-        ---@type dapview.Config
-        opts = {
-          winbar = {
-            sections = { 'repl', 'scopes', 'watches', 'exceptions', 'breakpoints', 'threads', 'disassembly' },
-            default_section = 'repl',
-            base_sections = {
-              repl = {
-                label = '[R]EPL',
-              },
-              scopes = {
-                label = '[S]copes',
-              },
-              watches = {
-                label = '[W]atches',
-              },
-              exceptions = {
-                label = '[E]xceptions',
-              },
-              breakpoints = {
-                label = '[B]reakpoints',
-              },
-              threads = {
-                label = '[T]hreads',
-              },
-            },
-          },
-          auto_toggle = true,
-          follow_tab = true,
-        },
-      },
     },
 
     -- Git Client
@@ -1094,6 +1127,13 @@ require('lazy').setup {
           pattern = 'git',
           callback = function()
             vim.api.nvim_win_close(0, false)
+          end,
+        })
+        vim.api.nvim_create_autocmd('WinLeave', {
+          callback = function(event)
+            if vim.bo[event.buf].filetype == 'fugitive' then
+              vim.api.nvim_win_close(0, false)
+            end
           end,
         })
       end,
@@ -1194,12 +1234,26 @@ require('lazy').setup {
       'folke/noice.nvim',
       lazy = true,
       event = 'VeryLazy',
+      dependencies = {
+        {
+          'MunifTanjim/nui.nvim',
+          lazy = true,
+        },
+        'folke/snacks.nvim',
+      },
       config = function()
+        ---@module 'noice'
         local noice = require 'noice'
         noice.setup {
           presets = {
             command_palette = true,
             long_message_to_split = true,
+          },
+          routes = {
+            {
+              view = 'notify',
+              filter = { event = 'msg_showmode' },
+            },
           },
         }
         require('lualine').setup {
@@ -1216,25 +1270,8 @@ require('lazy').setup {
           },
         }
       end,
-      opts = {
-        presets = {
-          command_palette = true,
-          long_message_to_split = true,
-        },
-        routes = {
-          {
-            view = 'notify',
-            filter = { event = 'msg_showmode' },
-          },
-        },
-      },
-      dependencies = {
-        {
-          'MunifTanjim/nui.nvim',
-          lazy = true,
-          event = 'VeryLazy',
-        },
-        'folke/snacks.nvim',
+      keys = {
+        { '<leader>n', '<CMD>Noice<CR>', mode = { 'n', 'x' }, desc = 'Open [n]otifications' },
       },
     },
 
