@@ -315,7 +315,7 @@ require('lazy').setup {
       end,
       keys = {
         {
-          '<leader>bh',
+          '<leader>bf',
           function()
             require('conform').format({ async = true }, function(err)
               if not err then
@@ -742,6 +742,8 @@ require('lazy').setup {
             { mode = 'x', keys = '<leader>c', desc = '+[c]ode' },
             { mode = 'n', keys = '<leader>g', desc = '+[g]it' },
             { mode = 'x', keys = '<leader>g', desc = '+[g]it' },
+            { mode = 'n', keys = '<leader>d', desc = '+[d]ebug' },
+            { mode = 'x', keys = '<leader>d', desc = '+[d]ebug' },
           },
           window = {
             delay = 0,
@@ -899,6 +901,13 @@ require('lazy').setup {
           cmd = {
             'DapDisasm',
             'DapDisasmSetMemref',
+            'DapViewOpen',
+            'DapViewClose',
+            'DapViewToggle',
+            'DapViewWatch',
+            'DapViewJump',
+            'DapViewShow',
+            'DapViewNavigate',
           },
           opts = {
             dapui_register = false,
@@ -966,6 +975,10 @@ require('lazy').setup {
                 dapview.close()
               end
             end,
+            keys = {
+              { '<leader>dv', '<CMD>DapViewToggle<CR>', mode = { 'n', 'x' }, desc = 'Toggle [v]iew' },
+              { '<leader>dw', '<CMD>DapViewWatch<CR>', mode = { 'n', 'x' }, desc = '[w]atch Selection' },
+            },
           },
         },
       },
@@ -1020,10 +1033,11 @@ require('lazy').setup {
         end
 
         local args_pick = function()
-          return utils.splitstr(vim.fn.input 'Arguments: ')
+          return utils.splitstr(vim.fn.input 'Arguments?: ')
         end
 
         dap.defaults.fallback.auto_continue_if_many_stopped = false
+
         -- C Family
         dap.defaults.c.autostart = 'Launch w/ Args'
         dap.adapters.gdb = {
@@ -1075,6 +1089,71 @@ require('lazy').setup {
           },
         }
       end,
+      keys = {
+        { '<leader>dd', '<CMD>DapNew<CR>', mode = { 'n', 'x' }, desc = 'Start [d]ebug Session' },
+        {
+          '<leader>dr',
+          function()
+            require('dap').run_last()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[r]estart Session',
+        },
+        { '<leader>db', '<CMD>DapToggleBreakpoint<CR>', mode = { 'n', 'x' }, desc = 'Set [b]reakpoint' },
+        {
+          '<leader>dB',
+          function()
+            local cond = vim.input 'Condition: '
+            if cond == '' then
+              return
+            end
+            require('dap').toggle_breakpoint(cond, nil, nil, true)
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Conditional [B]reakpoint',
+        },
+        {
+          '<leader>dl',
+          function()
+            local log = vim.fn.input 'Message: '
+            if log == '' then
+              return
+            end
+            local cond = vim.fn.input 'Condition?: '
+            require('dap').toggle_breakpoint(cond, nil, log, true)
+          end,
+          mode = { 'n', 'x' },
+          desc = 'Set [l]ogpoint',
+        },
+        { '<leader>di', '<CMD>DapStepInto<CR>', mode = { 'n', 'x' }, desc = 'Step [i]nto Scope' },
+        { '<leader>do', '<CMD>DapStepOut<CR>', mode = { 'n', 'x' }, desc = 'Step [o]ut of Scope' },
+        { '<leader>dn', '<CMD>DapStepOver<CR>', mode = { 'n', 'x' }, desc = '[n]ext Line' },
+        {
+          '<leader>dN',
+          function()
+            require('dap').step_over { steppingGranularity = 'instruction' }
+          end,
+          mode = { 'n', 'x' },
+          desc = '[N]ext Instruction',
+        },
+        {
+          '<leader>dp',
+          function()
+            require('dap').step_back()
+          end,
+          mode = { 'n', 'x' },
+          desc = '[p]revious Line',
+        },
+        {
+          '<leader>dP',
+          function()
+            require('dap').step_back { steppingGranularity = 'instruction' }
+          end,
+          mode = { 'n', 'x' },
+          desc = '[p]revious Instruction',
+        },
+        { '<leader>dt', '<CMD>DapTerminate<CR>', mode = { 'n', 'x' }, desc = '[t]erminate Session' },
+      },
     },
 
     -- Git Client
