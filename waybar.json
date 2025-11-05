@@ -8,7 +8,14 @@
 
   "modules-left": ["group/apps", "hyprland/workspaces"],
   "modules-center": ["clock#date", "idle_inhibitor", "clock#time"],
-  "modules-right": ["privacy", "tray", "group/audio", "group/measurement", "custom/notification", "group/power"],
+  "modules-right": [
+    "privacy",
+    "tray",
+    "group/audio",
+    "group/measurement",
+    "custom/notification",
+    "group/power"
+  ],
 
   "custom/appsbtn": {
     "format": "󰀻<sub> </sub>",
@@ -74,12 +81,16 @@
       "class<libreoffice-math>": " <sub> </sub>",
       "class<libreoffice-base>": " <sub> </sub>",
       "class<soffice>": "",
+      "class<org.inkscape.Inkscape>": "",
+      "class<gimp>": "",
       "title<.*Friends List.*>": " <sub> </sub>",
       "title<.*youtube —.*": " <sub> </sub>",
-      "title<OmegaStrikers  >": "󰡹 <sub> </sub>",
+      "title<OmegaStrikers  >": "󰏉 ",
       "class<org.kde.kdenlive> title<(Rendering.*)?Kdenlive>": "",
       "class<org.prismlauncher.PrismLauncher> title<Prism Launcher .*>": "󰍳 <sub> </sub>",
       "class<(com.obsproject.Studio|obs)> title<OBS .*>": "󰄄 <sub> </sub>",
+      "class<org.inkscape.Inkscape> title<(.*Inkscape)>": " <sub> </sub>",
+      "class<gimp> title<(.*GIMP|GNU Image Manipulation Program)>": " <sub> </sub>",
       "class<(footclient|foot)> title<(emacs .*|emacsclient .*)>|class<emacs>": " <sub> </sub>",
       "class<(footclient|foot)> title<(nvim .*|vim .*|vi .*)>": " <sub> </sub>",
       "class<(footclient|foot)> title<Yazi:.*>": "󰇥 <sub> </sub>",

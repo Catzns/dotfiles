@@ -23,6 +23,14 @@ function Yazi
 	rm -f -- "$tmp"
 end
 abbr --add yazi Yazi
+
+function gcd
+    if git status &>/dev/null
+        cd $(git rev-parse --show-toplevel)
+    else
+        cd
+    end
+end
 # =============================================================================
 #
 # Utility functions for zoxide.

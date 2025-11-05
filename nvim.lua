@@ -2,6 +2,7 @@
 --[[ VARIABLES ]]
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
+vim.g.c_syntax_for_h = true
 vim.g.have_nerd_font = true
 vim.g.virtual_lines = true
 vim.g.autofmt = true
@@ -37,8 +38,6 @@ vim.o.scrolloff = 5
 vim.o.sidescrolloff = 10
 vim.o.wrap = false
 vim.o.confirm = true
-vim.o.cinkeys = vim.o.cinkeys .. ',!<Tab>'
-vim.o.indentkeys = vim.o.indentkeys .. ',!<Tab>'
 vim.o.foldmethod = 'expr'
 vim.o.foldcolumn = '1'
 vim.o.foldlevelstart = 999
@@ -73,6 +72,7 @@ vim.keymap.set({ 'n', 'x' }, '<esc>', '<cmd>nohlsearch<cr><esc>')
 vim.keymap.set('t', '<esc><esc>', '<c-\\><c-n>', { desc = 'Exit terminal mode' })
 vim.keymap.set({ 'n', 'x', 'o' }, 'j', 'gj')
 vim.keymap.set({ 'n', 'x', 'o' }, 'k', 'gk')
+
 -- H and L jump to end of visual line if text is wrapped, real line if not
 vim.keymap.set({ 'n', 'x', 'o' }, 'H', function()
   if vim.wo.wrap then
@@ -89,9 +89,11 @@ vim.keymap.set({ 'n', 'x', 'o' }, 'L', function()
   end
 end, { expr = true, noremap = true })
 
+-- Bind TAB to reindent, use <C-i> to insert literal tabs
+vim.keymap.set('i', '<TAB>', '<C-f>', { desc = 'Reindent Line' })
+
 -- Leader menu
 vim.keymap.set({ 'n', 'x' }, '<leader>l', '<CMD>Lazy<CR>', { desc = '[l]azy Package Manager' })
-vim.keymap.set({ 'n', 'x' }, '<leader>q', '<CMD>q<CR>', { desc = '[q]uit Neovim' })
 vim.keymap.set({ 'n', 'x' }, '<leader>m', '<CMD>messages<CR>', { desc = 'Open [m]essages' })
 
 -- B - buffer
@@ -106,8 +108,8 @@ vim.keymap.set({ 'n', 'x' }, '<leader>bs', function()
 end, { expr = true, desc = 'New Buffer in [s]plit' })
 
 -- C - Code
-vim.keymap.set({ 'n', 'x' }, '<leader>cn', 'grn', { desc = 'LSP Re[n]ame Symbol' })
-vim.keymap.set({ 'n', 'x' }, '<leader>ca', 'gra', { desc = 'LSP [a]ctions' })
+vim.keymap.set('n', '<leader>cn', vim.lsp.buf.rename, { desc = 'LSP Re[n]ame Symbol' })
+vim.keymap.set({ 'n', 'x' }, '<leader>ca', vim.lsp.buf.code_action, { desc = 'LSP [a]ctions' })
 
 -- F - file
 vim.keymap.set({ 'n', 'x' }, '<leader>fw', '<CMD>w<CR>', { desc = '[w]rite' })
@@ -186,10 +188,53 @@ vim.diagnostic.config {
 }
 
 -- [[ LSP ]]
+-- JS garbage
+local vue_plugin = {
+  name = '@vue/typescript-plugin',
+  location = '/usr/bin/vue-language-server',
+  languages = { 'vue' },
+  configNamespace = 'typescript',
+}
+local ts_filetypes = {
+  'typescript',
+  'javascript',
+  'javascriptreact',
+  'typescriptreact',
+  'vue',
+}
+-- Typescript Addons
+vim.lsp.config('ts_ls', {
+  init_options = {
+    plugins = {
+      vue_plugin,
+    },
+    filetypes = ts_filetypes,
+  },
+})
+-- Vue w/ Typescript
+vim.lsp.config('vtsls', {
+  settings = {
+    vtsls = {
+      tsserver = {
+        globalPlugins = {
+          vue_plugin,
+        },
+      },
+    },
+  },
+  filetypes = 'vue',
+})
+
 vim.lsp.enable {
-  'lua_ls',
-  'cssls',
   'clangd',
+  'lua_ls',
+  'html',
+  'cssls',
+  'ts_ls',
+  'vtsls',
+  'vue_ls',
+  'jsonls',
+  'yamlls',
 }
 
 -- [[ AUTOCOMMANDS ]]
@@ -203,12 +248,13 @@ vim.api.nvim_create_autocmd('BufWinEnter', {
 vim.api.nvim_create_autocmd('BufWinEnter', {
   pattern = {
     '*.txt',
-    '*(\\d?)',
+    '*(*)',
   },
   callback = function()
     local ft = {
       'help',
       'man',
+      'text',
     }
     if vim.tbl_contains(ft, vim.bo.filetype) and (vim.api.nvim_win_get_width(0) > vim.api.nvim_win_get_height(0) * 5.5) then
       vim.cmd 'wincmd L'
@@ -268,9 +314,21 @@ require('lazy').setup {
       build = ':TSUpdate',
       config = function()
         local parsers = {
-          'lua',
-          'hyprlang',
           'c',
+          'lua',
+          'javascript',
+          'jsx',
+          'typescript',
+          'tsx',
+          'vue',
+          'html',
+          'css',
+          'scss',
+          'yaml',
+          'json',
+          'toml',
+          'hyprlang',
+          'markdown',
         }
         require('nvim-treesitter').install(parsers)
         vim.api.nvim_create_autocmd('FileType', {
@@ -298,6 +356,16 @@ require('lazy').setup {
           formatters_by_ft = {
             lua = { 'stylua' },
             c = { 'clang-format' },
+            javascript = { 'prettier' },
+            javascriptreact = { 'prettier' },
+            typescript = { 'prettier' },
+            typescriptreact = { 'prettier' },
+            html = { 'prettier' },
+            css = { 'prettier' },
+            scss = { 'prettier' },
+            vue = { 'prettier' },
+            json = { 'prettier' },
+            yaml = { 'prettier' },
           },
           formatters = {},
           default_format_opts = {
@@ -317,16 +385,18 @@ require('lazy').setup {
         {
           '<leader>bf',
           function()
-            require('conform').format({ async = true }, function(err)
-              if not err then
-                local mode = vim.api.nvim_get_mode().mode
-                if vim.startswith(string.lower(mode), 'v') then
-                  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
-                end
-              end
-            end)
+            require('conform').format { async = true }
+            vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'n', true)
           end,
-          mode = { 'n', 'x' },
+          mode = 'x',
+          desc = '[f]ormat Selection',
+        },
+        {
+          '<leader>bf',
+          function()
+            require('conform').format { async = true }
+          end,
+          mode = 'n',
           desc = '[f]ormat Buffer',
         },
         {
@@ -358,16 +428,16 @@ require('lazy').setup {
     -- Indent tools
     ---@type LazySpec
     {
-      'NMAC427/guess-indent.nvim',
+      'tpope/vim-sleuth',
       lazy = true,
-      cmd = 'GuessIndent',
+      cmd = 'Sleuth',
       event = {
         'BufReadPost',
         'BufNewFile',
+        'BufFilePost',
       },
-      opts = {},
       keys = {
-        { '<leader>i', '<CMD>GuessIndent<CR>', mode = { 'n', 'x' }, desc = 'Adjust [i]ndentation' },
+        { '<leader>i', '<CMD>verbose Sleuth<CR>', mode = { 'n', 'x' }, desc = 'Adjust [i]indentation' },
       },
     },
 
@@ -376,8 +446,8 @@ require('lazy').setup {
     {
       'saghen/blink.cmp',
       lazy = true,
-      event = 'BufWinEnter',
       version = '1.*',
+      event = 'BufWinEnter',
       ---@module 'blink.cmp'
       ---@type blink.cmp.Config
       opts = {
@@ -426,22 +496,27 @@ require('lazy').setup {
       'folke/snacks.nvim',
       lazy = false,
       priority = 1000,
-      ---@module 'snacks'
-      ---@type snacks.Config
-      opts = {
-        quickfile = { enabled = true },
-        bigfile = { enabled = true },
-        dashboard = { enabled = true },
-        input = { enabled = true },
-        notifier = { enabled = true },
-        bufdelete = { enabled = true },
-        indent = {
-          animate = {
-            enabled = false,
+      config = function()
+        ---@module 'snacks'
+        ---@type snacks.Config
+        require('snacks').setup {
+          quickfile = { enabled = true },
+          bigfile = { enabled = true },
+          dashboard = { enabled = true },
+          input = { enabled = true },
+          notifier = { enabled = true },
+          bufdelete = { enabled = true },
+          indent = {
+            animate = {
+              enabled = false,
+            },
           },
-        },
-        picker = { enabled = true },
-      },
+          picker = { enabled = true },
+        }
+        vim.api.nvim_create_autocmd('BufNewFile', {
+          callback = Snacks.indent.enable,
+        })
+      end,
       keys = {
         -- Leader
         {
@@ -762,6 +837,19 @@ require('lazy').setup {
       end,
     },
 
+    -- HTML Tag Matching
+    ---@type LazySpec
+    {
+      'windwp/nvim-ts-autotag',
+      lazy = true,
+      event = 'BufWinEnter',
+      opts = {
+        opts = {
+          enable_close_on_slash = true,
+        },
+      },
+    },
+
     -- Code Runner
     ---@type LazySpec
     {
@@ -781,7 +869,17 @@ require('lazy').setup {
         require('sniprun').setup {
           selected_interpreters = { 'Lua_nvim' },
           display = {
-            'Classic',
+            'TempFloatingWindow',
+          },
+          snipruncolors = {
+            SniprunFloatingWinOk = {
+              fg = '#7dcfff',
+              ctermfg = 'Cyan',
+            },
+            SniprunFloatingWinError = {
+              fg = '#f7768e',
+              ctermfg = 'DarkRed',
+            },
           },
         }
       end,
@@ -894,9 +992,7 @@ require('lazy').setup {
           opts = {},
         },
         {
-          -- 'Jorenar/nvim-dap-disasm',
-          'Catzns/nvim-dap-disasm',
-          dev = true,
+          'Jorenar/nvim-dap-disasm',
           lazy = true,
           cmd = {
             'DapDisasm',
@@ -1022,11 +1118,11 @@ require('lazy').setup {
               coroutine.resume(co, picker, item.text)
             end,
             on_close = function(picker)
-              coroutine.resume(co, picker, nil)
+              coroutine.resume(co, picker, dap.ABORT)
             end,
           }
           local picker, elf = coroutine.yield()
-          if elf then
+          if elf ~= dap.ABORT then
             picker:close()
           end
           return elf
@@ -1091,10 +1187,11 @@ require('lazy').setup {
       end,
       keys = {
         { '<leader>dd', '<CMD>DapNew<CR>', mode = { 'n', 'x' }, desc = 'Start [d]ebug Session' },
+        { '<leader>dc', '<CMD>DapContinue<CR>', mode = { 'n', 'x' }, desc = '[c]ontinue Session' },
         {
           '<leader>dr',
           function()
-            require('dap').run_last()
+            require('dap').restart()
           end,
           mode = { 'n', 'x' },
           desc = '[r]estart Session',
