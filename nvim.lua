@@ -1113,7 +1113,7 @@ require('lazy').setup {
           Snacks.picker.files {
             title = 'Executable',
             cmd = 'fd',
-            args = { '-tx', '--color', 'never' },
+            args = { '-tx', '-I', '--color', 'never' },
             confirm = function(picker, item)
               coroutine.resume(co, picker, item.text)
             end,
@@ -1200,7 +1200,7 @@ require('lazy').setup {
         {
           '<leader>dB',
           function()
-            local cond = vim.input 'Condition: '
+            local cond = vim.fn.input 'Condition: '
             if cond == '' then
               return
             end
