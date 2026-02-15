@@ -1,4 +1,5 @@
 -- vim: ts=2 sts=2 sw=2 et
+require 'password'
 --[[ VARIABLES ]]
 vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
@@ -222,7 +223,18 @@ vim.lsp.config('vtsls', {
       },
     },
   },
-  filetypes = 'vue',
+  filetypes = { 'vue' },
+})
+
+-- Temporary fix for lua_ls to trace filepaths properly
+vim.lsp.config('lua_ls', {
+  settings = {
+    Lua = {
+      workspace = {
+        library = vim.api.nvim_get_runtime_file('', true),
+      },
+    },
+  },
 })
 
 vim.lsp.enable {
@@ -233,6 +245,7 @@ vim.lsp.enable {
   'ts_ls',
   'vtsls',
   'vue_ls',
+  'intelephense',
   'jsonls',
   'yamlls',
 }
@@ -316,6 +329,7 @@ require('lazy').setup {
         local parsers = {
           'c',
           'lua',
+          'php',
           'javascript',
           'jsx',
           'typescript',
@@ -329,6 +343,8 @@ require('lazy').setup {
           'toml',
           'hyprlang',
           'markdown',
+          'bash',
+          'regex',
         }
         require('nvim-treesitter').install(parsers)
         vim.api.nvim_create_autocmd('FileType', {
@@ -356,6 +372,7 @@ require('lazy').setup {
           formatters_by_ft = {
             lua = { 'stylua' },
             c = { 'clang-format' },
+            php = { 'phpcbf' },
             javascript = { 'prettier' },
             javascriptreact = { 'prettier' },
             typescript = { 'prettier' },
@@ -472,7 +489,7 @@ require('lazy').setup {
           documentation = { auto_show = false },
         },
         sources = {
-          default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer' },
+          default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'omni' },
           providers = {
             lazydev = {
               name = 'LazyDev',

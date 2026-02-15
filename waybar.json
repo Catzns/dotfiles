@@ -87,10 +87,14 @@
       "class<blender>": "",
       "class<Audacity>": "󰋋 <sub> </sub>",
       "class<Archipelago.*>": "󱁏 <sub> </sub>",
+      "class<virt-manager>": "",
+      "class<vpkedit>": "",
+
       "title<.*Friends List.*>": " <sub> </sub>",
       "title<.*youtube —.*": " <sub> </sub>",
       "title<OmegaStrikers  >": "󰏉 ",
       "title<VA-11 Hall-A: Cyberpunk Bartender Action>": " <sub> </sub>",
+
       "class<firefox> title<.*Mozilla Firefox Private Browsing>": "󰗹 <sub> </sub>",
       "class<org.kde.kdenlive> title<(Rendering.*)?Kdenlive>": "",
       "class<org.prismlauncher.PrismLauncher> title<Prism Launcher .*>": "󰍳 <sub> </sub>",
@@ -102,6 +106,10 @@
       "class<(footclient|foot)> title<(nvim .*|vim .*|vi .*)>": " <sub> </sub>",
       "class<(footclient|foot)> title<Yazi:.*>": "󰇥 <sub> </sub>",
       "class<hl2_linux> title<Left 4 Dead 2 .*": "󰩒 ",
+      "class<virt-manager> title<Virtual Machine Manager>": " <sub> </sub>",
+      "class<virt-manager> title<.*on .*>": " <sub> </sub>",
+      "class<vpkedit> title<vpkedit .*>": "󰘧<sub> </sub>",
+
       "title<>": ""
     },
     "window-rewrite-default": "󰣆 <sub> </sub>",

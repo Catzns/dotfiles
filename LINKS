@@ -27,3 +27,4 @@ rofimoji.rc	~/.config/rofimoji.rc
 nvim.lua	~/.config/nvim/init.lua
 yazi-theme.toml	~/.config/yazi/theme.toml
 .stylua.toml	~/.config/nvim/.stylua.toml
+hyprland_desktop.conf	~/.config/hypr/hyprland_desktop.conf

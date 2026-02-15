@@ -4,5 +4,3 @@ export HYPRCURSOR_THEME="Bibata-Modern-Classic"
 export GTK_THEME="Tokyonight-Dark"
 export QT_QPA_PLATFORMTHEME="gtk3"
 export gtk-application-prefer-dark-theme=true
-echo 'ddcci 0x37' | sudo tee /sys/bus/i2c/devices/i2c-9/new_device
-echo 'ddcci 0x37' | sudo tee /sys/bus/i2c/devices/i2c-7/new_device
