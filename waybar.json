@@ -167,7 +167,7 @@
   },
 
   "memory": {
-    "format": " {used:0.1f}/{total:0.0f}G",
+    "format": " {used:01.1f}/{total:0.0f}G",
     "interval": 4,
     "tooltip": false
   },
@@ -182,6 +182,16 @@
     "format": "{}<sup>󰔄</sup>",
     "tooltip": false
   },
+  "battery": {
+    "format": "{icon}{capacity:0}",
+    "format-icons": ["󱊣", "󱊢", "󱊡"],
+    "states": {
+      "medium": 66,
+      "low": 33
+    },
+    "full-at": 99,
+    "tooltip": false
+  },
   "custom/pacman": {
     "exec": "while pidof -x checkupdates > /dev/null; do :; done; checkupdates | wc -l",
     "interval": 3600,
@@ -189,7 +199,13 @@
     "tooltip": false
   },
   "group/measurement": {
-    "modules": ["memory", "temperature", "custom/nvidia", "custom/pacman"],
+    "modules": [
+      "memory",
+      "temperature",
+      "custom/nvidia",
+      "battery",
+      "custom/pacman"
+    ],
     "orientation": "inherit"
   },
 
