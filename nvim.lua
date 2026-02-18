@@ -188,6 +188,11 @@ vim.diagnostic.config {
   virtual_lines = vim.g.virtual_lines,
 }
 
+-- [[ FILETYPES ]]
+vim.filetype.add {
+  pattern = { ['.*hypr.*%.conf'] = 'hyprlang' },
+}
+
 -- [[ LSP ]]
 -- JS garbage
 local vue_plugin = {
