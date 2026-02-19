@@ -183,13 +183,12 @@
     "tooltip": false
   },
   "battery": {
-    "format": "{icon}{capacity:0}",
+    "format": "{icon}<sub> </sub>{capacity:02}",
     "format-icons": ["󱊣", "󱊢", "󱊡"],
     "states": {
       "medium": 66,
       "low": 33
     },
-    "full-at": 99,
     "tooltip": false
   },
   "custom/pacman": {
