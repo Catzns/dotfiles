@@ -184,7 +184,7 @@
   },
   "battery": {
     "format": "{icon}<sub> </sub>{capacity:02}",
-    "format-icons": ["󱊣", "󱊢", "󱊡"],
+    "format-icons": ["󱊡", "󱊢", "󱊣"],
     "states": {
       "medium": 66,
       "low": 33
