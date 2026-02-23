@@ -197,7 +197,7 @@ vim.filetype.add {
 -- JS garbage
 local vue_plugin = {
   name = '@vue/typescript-plugin',
-  location = '/usr/bin/vue-language-server',
+  location = vim.fn.expand '$MASON/packages' .. '/vue-language-server' .. '/node_modules/@vue/language-server',
   languages = { 'vue' },
   configNamespace = 'typescript',
 }
@@ -208,16 +208,7 @@ local ts_filetypes = {
   'typescriptreact',
   'vue',
 }
--- Typescript Addons
-vim.lsp.config('ts_ls', {
-  init_options = {
-    plugins = {
-      vue_plugin,
-    },
-    filetypes = ts_filetypes,
-  },
-})
--- Vue w/ Typescript
+-- Add Vue to vtsls
 vim.lsp.config('vtsls', {
   settings = {
     vtsls = {
@@ -228,15 +219,20 @@ vim.lsp.config('vtsls', {
       },
     },
   },
-  filetypes = { 'vue' },
+  filetypes = ts_filetypes,
 })
 
--- Temporary fix for lua_ls to trace filepaths properly
+-- Workaround for Nvim workspace detection on startup
 vim.lsp.config('lua_ls', {
   settings = {
     Lua = {
       workspace = {
-        library = vim.api.nvim_get_runtime_file('', true),
+        checkThirdParty = false,
+        library = {
+          vim.env.VIMRUNTIME,
+          { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
+          -- { path = "snacks.nvim", words = { "Snacks" } }, -- others you need to load
+        },
       },
     },
   },
@@ -247,7 +243,6 @@ vim.lsp.enable {
   'lua_ls',
   'html',
   'cssls',
-  'ts_ls',
   'vtsls',
   'vue_ls',
   'intelephense',
@@ -322,6 +317,58 @@ require('lazy').setup {
     -- LSP configurations
     ---@type LazySpec
     'neovim/nvim-lspconfig',
+
+    -- LS, Debug, Formatter installer
+    {
+      'WhoIsSethDaniel/mason-tool-installer.nvim',
+      lazy = false,
+      config = function()
+        ---@module 'mason-tool-installer'
+        ---@type MasonToolOptions
+        require('mason-tool-installer').setup {
+          ensure_installed = {
+            --LSPs
+            'lua-language-server',
+            'html-lsp',
+            'css-lsp',
+            'vtsls',
+            'vue-language-server',
+            'json-lsp',
+            'yaml-language-server',
+            'docker-language-server',
+            'clangd',
+
+            --Formatters
+            'prettier',
+            'clang-format',
+            'phpcbf',
+          },
+        }
+
+        vim.api.nvim_create_autocmd('User', {
+          pattern = 'LazyUpdate',
+          callback = function()
+            vim.cmd 'MasonToolsUpdate'
+          end,
+        })
+      end,
+      dependencies = {
+        {
+          'mason-org/mason.nvim',
+          lazy = false,
+          ---@module 'mason'
+          opts = {
+            ui = {
+              icons = {
+                package_installed = '✓',
+                package_pending = '➜',
+                package_uninstalled = '✗',
+              },
+            },
+          },
+        },
+      },
+    },
 
     -- Treesitter parser installer
     ---@type LazySpec
@@ -760,7 +807,7 @@ require('lazy').setup {
     -- Git signals, Comment macros, Nerdfont icons, Which-key popups
     ---@type LazySpec
     {
-      'echasnovski/mini.nvim',
+      'nvim-mini/mini.nvim',
       lazy = false,
       priority = 1000,
       dependencies = {
