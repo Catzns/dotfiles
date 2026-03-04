@@ -190,7 +190,11 @@ vim.diagnostic.config {
 
 -- [[ FILETYPES ]]
 vim.filetype.add {
-  pattern = { ['.*hypr.*%.conf'] = 'hyprlang' },
+  pattern = {
+    ['.*hypr.*%.conf'] = 'hyprlang',
+    ['compose%.ya?ml'] = 'yaml.docker-compose',
+    ['docker%-compose%.ya?ml'] = 'yaml.docker-compose',
+  },
 }
 
 -- [[ LSP ]]
@@ -248,6 +252,7 @@ vim.lsp.enable {
   'intelephense',
   'jsonls',
   'yamlls',
+  'dockerls',
 }
 
 -- [[ AUTOCOMMANDS ]]
@@ -322,6 +327,13 @@ require('lazy').setup {
     {
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       lazy = false,
+      cmd = {
+        'MasonToolsClean',
+        'MasonToolsInstall',
+        'MasonToolsInstallSync',
+        'MasonToolsUpdate',
+        'MasonToolsUpdateSync',
+      },
       config = function()
         ---@module 'mason-tool-installer'
         ---@type MasonToolOptions
@@ -335,7 +347,7 @@ require('lazy').setup {
             'vue-language-server',
             'json-lsp',
             'yaml-language-server',
-            'docker-language-server',
+            'dockerfile-language-server',
             'clangd',
 
             --Formatters

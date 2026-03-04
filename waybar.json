@@ -89,6 +89,8 @@
       "class<Archipelago.*>": "󱁏 <sub> </sub>",
       "class<virt-manager>": "",
       "class<vpkedit>": "",
+      "class<Slippi Launcher>": " <sub> </sub>",
+      "class<Apprun>": "",
 
       "title<.*Friends List.*>": " <sub> </sub>",
       "title<.*youtube —.*": " <sub> </sub>",
@@ -109,6 +111,7 @@
       "class<virt-manager> title<Virtual Machine Manager>": " <sub> </sub>",
       "class<virt-manager> title<.*on .*>": " <sub> </sub>",
       "class<vpkedit> title<vpkedit .*>": "󰘧<sub> </sub>",
+      "class<Apprun> title<Faster Melee .*>": "󱢴 <sub> </sub>",
 
       "title<>": ""
     },
