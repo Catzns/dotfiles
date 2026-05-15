@@ -3,6 +3,26 @@ function fish_greeting
 	fastfetch
 end
 
+abbr --add userctl systemctl --user
+
+function gcd
+    if git status &>/dev/null
+        cd $(git rev-parse --show-toplevel)
+    else
+        cd
+    end
+end
+
+function Yazi
+	set tmp (mktemp -t "yazi-cwd.XXXXXX")
+	yazi $argv --cwd-file="$tmp"
+	if set cwd (command cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+		builtin cd -- "$cwd"
+	end
+	rm -f -- "$tmp"
+end
+abbr --add yazi Yazi
+
 if status is-interactive
     # Shamelessly ripped from folke's tokyonight.nvim
     # TokyoNight Color Palette
@@ -50,23 +70,6 @@ if status is-interactive
     #    alias info="info --vi-keys"
 end
 
-function Yazi
-	set tmp (mktemp -t "yazi-cwd.XXXXXX")
-	yazi $argv --cwd-file="$tmp"
-	if set cwd (command cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
-		builtin cd -- "$cwd"
-	end
-	rm -f -- "$tmp"
-end
-abbr --add yazi Yazi
-
-function gcd
-    if git status &>/dev/null
-        cd $(git rev-parse --show-toplevel)
-    else
-        cd
-    end
-end
 # =============================================================================
 #
 # Utility functions for zoxide.

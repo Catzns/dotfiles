@@ -63,7 +63,8 @@ local function split()
 end
 
 local function get_git_dir()
-  local gitdir = vim.fn.finddir('.git/..', '.;')
+  local dirs = vim.fn.finddir('.git/..', '.;')
+  local gitdir = type(dirs) == 'string' and dirs or dirs[1]
   return (gitdir == '' and vim.fn.getcwd()) or gitdir
 end
 
@@ -226,20 +227,23 @@ vim.lsp.config('vtsls', {
   filetypes = ts_filetypes,
 })
 
--- Workaround for Nvim workspace detection on startup
-vim.lsp.config('lua_ls', {
-  settings = {
-    Lua = {
-      workspace = {
-        checkThirdParty = false,
-        library = {
-          vim.env.VIMRUNTIME,
-          { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-          -- { path = "snacks.nvim", words = { "Snacks" } }, -- others you need to load
+-- Add hyprland stubs to hypr config files
+vim.api.nvim_create_autocmd('LspAttach', {
+  pattern = { 'hypr*.lua', '*/hypr/*.lua', '*/hyprland/*.lua' },
+  callback = function(ev)
+    local client = vim.lsp.get_clients({ bufnr = ev.buf, name = 'lua_ls' })[1]
+    client.settings = vim.tbl_deep_extend('force', client.settings, {
+      Lua = {
+        workspace = {
+          library = { '/usr/share/hypr/stubs' },
+        },
+        diagnostics = {
+          globals = { 'hl' },
         },
       },
-    },
-  },
+    })
+    -- client:notify('workspace/didChangeConfiguration', { settings = client.settings })
+  end,
 })
 
 vim.lsp.enable {
@@ -503,6 +507,18 @@ require('lazy').setup {
         library = {
           { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
         },
+        enabled = function(root_dir)
+          local names = {
+            'nvim.lua',
+            vim.fn.expand '%:t',
+          }
+          for _, name in pairs(names) do
+            if vim.uv.fs_stat(root_dir .. '/' .. name) then
+              return true
+            end
+          end
+          return false
+        end,
       },
     },
 
@@ -661,7 +677,8 @@ require('lazy').setup {
         {
           '<leader>ff',
           function()
-            Snacks.picker.files { dirs = { vim.fn.expand '%:h' } }
+            local dir = vim.fn.expand '%:h'
+            Snacks.picker.files { dirs = { dir ~= '' and dir or vim.uv.os_homedir() } }
           end,
           mode = { 'n', 'x' },
           desc = 'Search [f]iles in CFD',
@@ -1563,6 +1580,8 @@ require('lazy').setup {
         require('tokyonight').setup {
           style = 'night',
           dim_inactive = true,
+          on_colors = function() end,
+          on_highlights = function() end,
         }
         vim.cmd 'colorscheme tokyonight'
       end,

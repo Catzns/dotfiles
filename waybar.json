@@ -46,7 +46,7 @@
     },
     "format-window-separator": "",
     "persistent-workspaces": {
-      "*": [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      "*": [1, 2, 3, 4, 5, 6, 7, 8, 9, "0"]
     },
     "window-rewrite": {
       "class<(footclient|foot)>": "󰽒 ",
@@ -59,18 +59,18 @@
       "class<hyprland-donate-screen>": " <sub> </sub>",
       "class<.*pavucontrol>": " <sub> </sub>",
       "class<.*Celluloid|mpv>": " <sub> </sub>",
-      "class<ristretto>": " <sub> </sub>",
+      "class<(ristretto|org.xfce.ristretto)>": " <sub> </sub>",
       "class<obsidian|@joplin/app-desktop>": "󰠮 <sub> </sub>",
       "class<steam_app.*|tf_linux64>": "󰮂 <sub> </sub>",
       "class<cs2>": "󰜃 <sub> </sub>",
-      "class<MarbleItUp.*>": " <sub> </sub>",
+      "class<(marbleblast|MarbleItUp.*)>": " <sub> </sub>",
       "class<steam>": " <sub> </sub>",
       "class<nwg-look>": " <sub> </sub>",
       "class<swappy>": "󰹑 <sub> </sub>",
       "class<org.qbittorrent.qBittorrent>": " <sub> </sub>",
       "class<nordvpn-gui>": "󰖂 <sub> </sub>",
       "class<org.kde.kdenlive>": " <sub> </sub>",
-      "class<krita>": " <sub> </sub>",
+      "class<(krita|org.kde.krita)>": " <sub> </sub>",
       "class<(com.obsproject.Studio|obs)>": "",
       "class<org.prismlauncher.PrismLauncher>": "",
       "class<Minecraft.*>": "󰍳 <sub> </sub>",
@@ -91,6 +91,7 @@
       "class<vpkedit>": "",
       "class<Slippi Launcher>": " <sub> </sub>",
       "class<Apprun>": "",
+      "class<r2modman>": " <sub> </sub>",
 
       "title<.*Friends List.*>": " <sub> </sub>",
       "title<.*youtube —.*": " <sub> </sub>",

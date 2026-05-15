@@ -5,7 +5,7 @@ starship.toml	~/.config/starship.toml
 ghostty.conf	~/.config/ghostty/config
 btop.conf	~/.config/btop/btop.conf
 fish.fish	~/.config/fish/config.fish
-hyprland.conf	~/.config/hypr/hyprland.conf
+hyprland.lua	~/.config/hypr/hyprland.lua
 hypridle.conf	~/.config/hypr/hypridle.conf
 hyprlock.conf	~/.config/hypr/hyprlock.conf
 foot.ini	~/.config/foot/foot.ini
