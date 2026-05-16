@@ -445,12 +445,22 @@ hl.workspace_rule {
   workspace = 'name:0',
   monitor = monitors.desk_secondary,
   default = true,
+  persistent = true,
 }
 hl.workspace_rule {
   workspace = '1',
   monitor = monitors.desk_primary,
   default = true,
+  persistent = true,
 }
+for i = 2, 9 do
+  hl.workspace_rule {
+    workspace = tostring(i),
+    monitor = monitors.desk_primary,
+    persistent = true,
+  }
+end
+
 hl.workspace_rule {
   workspace = 'special:s',
   layout = 'scrolling',
