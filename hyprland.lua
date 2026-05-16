@@ -1,4 +1,19 @@
--- Refer to the wiki for more information.
+local utils = require 'hyprland-utils'
+local k, n, rc, border, buildresizes, buildrules, doubletap, gate, move_groupaware, screenshot, translate =
+  utils.k,
+  utils.n,
+  utils.rc,
+  utils.border,
+  utils.buildresizes,
+  utils.buildrules,
+  utils.doubletap,
+  utils.gate,
+  utils.move_groupaware,
+  utils.screenshot,
+  utils.translate
+table.extend = utils.extend
+
+-- Refer to the wiki for details.
 -- https://wiki.hypr.land/Configuring/
 
 -- [[ VARIABLES ]]
@@ -37,6 +52,40 @@ local services = {
   'thunar',
   'syncthing',
   'waybar',
+}
+
+---@type selections
+local floats = {
+  -- c: Class names, t: Title names
+  { c = 'xdg-desktop-portal-gtk' },
+  { c = 'org.pulseaudio.pavucontrol' },
+  { c = 'org.gnome.FileRoller' },
+  { c = 'file-png' },
+
+  { c = 'firefox', t = 'Library' },
+  { c = 'Thunar', t = rc { 'Rename.*', 'File Operation Progress.*' } },
+
+  { c = 'gimp', t = n(rc { '.*- GIMP', 'GNU Image Manipulation Program' }) },
+  { c = 'org.inkscape.Inkscape', t = n '.*Inkscape$' },
+  { c = rc { 'obs', 'com.obsproject.Studio' }, t = n 'OBS .*' },
+}
+
+---@type selections
+local fullscreens = {
+  -- c: Class names, t: Title names
+  { c = 'hl2_linux,' },
+  { c = 'cs2' },
+  { c = 'tf_linux64' },
+  { t = 'Marble Blast Ultra!.*' },
+  { t = 'UltraRebirth.*' },
+  { c = 'steam_app_\\d+', t = '.+' },
+}
+
+---@type resizes
+local resizes = {
+  -- c: Class names, t: Title names
+  -- x & y: Steps left / right ranging -10..10
+  { c = 'steam', t = 'Friends List', x = -5 },
 }
 
 local colors = {
@@ -91,16 +140,6 @@ hl.on('hyprland.start', function()
 end)
 
 -- [[ AESTHETICS ]]
----@param top string
----@param bottom string
----@return { colors: string[], angle: integer }
-local function border(top, bottom)
-  return {
-    colors = { top .. alphas.high, bottom .. alphas.high },
-    angle = 80,
-  }
-end
-
 hl.config {
   general = {
     layout = 'dwindle',
@@ -222,18 +261,17 @@ hl.config {
 -- [[ ANIMATIONS ]]
 hl.curve('b', { type = 'bezier', points = { { 0.15, 0 }, { 0.1, 1 } } })
 hl.curve('f', { type = 'bezier', points = { { 0, 0 }, { 1, 1 } } })
-hl.curve('wi', { type = 'spring', mass = 1, stiffness = 66, dampening = 14.33 })
-hl.curve('wo', { type = 'spring', mass = 1, stiffness = 66, dampening = 14.66 })
+hl.curve('s', { type = 'spring', mass = 1, stiffness = 66, dampening = 14.33 })
 
 hl.animation { leaf = 'global', enabled = false }
-hl.animation { leaf = 'windows', enabled = true, speed = 1, spring = 'wi', style = 'gnomed' }
+hl.animation { leaf = 'windows', enabled = true, speed = 1, spring = 's', style = 'gnomed' }
 hl.animation { leaf = 'fade', enabled = true, speed = 1, bezier = 'b' }
-hl.animation { leaf = 'fadeSwitch', enabled = true, speed = 5, bezier = 'b' }
+hl.animation { leaf = 'fadeSwitch', enabled = false, speed = 5, bezier = 'b' }
 hl.animation { leaf = 'fadeLayers', enabled = true, speed = 1.5, bezier = 'b' }
 hl.animation { leaf = 'fadeDpms', enabled = false }
 hl.animation { leaf = 'border', enabled = true, speed = 0.66, bezier = 'b' }
 hl.animation { leaf = 'layers', enabled = true, speed = 1, bezier = 'f', style = 'fade' }
-hl.animation { leaf = 'workspaces', enabled = true, speed = 1, spring = 'wo', style = 'slide' }
+hl.animation { leaf = 'workspaces', enabled = true, speed = 1, spring = 's', style = 'slide' }
 hl.animation { leaf = 'specialWorkspace', enabled = true, speed = 1.5, bezier = 'b', style = 'fade' }
 
 hl.gesture {
@@ -243,38 +281,6 @@ hl.gesture {
 }
 
 -- [[ KEYBINDS ]]
----@param mod string
----@param ... string
----@return string
-local function k(mod, ...)
-  local keys = { ... }
-  local combo = mod
-  for _, key in ipairs(keys) do
-    combo = combo .. ' + ' .. key
-  end
-  return combo
-end
-
----@alias gate boolean[]
----@return gate
-local function gate()
-  return { true }
-end
-
----@param callback function
----@param gated gate
----@param timeout integer
-local function doubletap(callback, gated, timeout)
-  if gated[1] then
-    gated[1] = false
-    hl.timer(function()
-      gated[1] = true
-    end, { timeout = timeout, type = 'oneshot' })
-  else
-    callback()
-  end
-end
-
 -- Applications & Functions
 hl.bind(k('SUPER', 'Escape'), hl.dsp.exec_cmd(cmds.logout))
 local super = gate()
@@ -331,22 +337,15 @@ local move = {
   arr = { 'right', 'left', 'down', 'up' },
 }
 
-local function translate(i)
-  local dist = hl.get_active_monitor().width / 20
-  local axes = {
-    { dist, 0 },
-    { -dist, 0 },
-    { 0, dist },
-    { 0, -dist },
-  }
-  hl.dispatch(hl.dsp.window.resize { x = axes[i][1], y = axes[i][2], relative = true })
-end
-
 for i = 1, 4 do
   hl.bind(k('SUPER', move.vim[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
   hl.bind(k('SUPER', move.arr[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
-  hl.bind(k('SUPER', 'ALT', move.vim[i]), hl.dsp.window.move { direction = move.dir[i] })
-  hl.bind(k('SUPER', 'ALT', move.arr[i]), hl.dsp.window.move { direction = move.dir[i] })
+  hl.bind(k('SUPER', 'ALT', move.vim[i]), function()
+    move_groupaware(move.dir[i])
+  end)
+  hl.bind(k('SUPER', 'ALT', move.arr[i]), function()
+    move_groupaware(move.dir[i])
+  end)
   hl.bind(k('SUPER', 'SHIFT', move.vim[i]), function()
     translate(i)
   end, { repeating = true })
@@ -354,6 +353,7 @@ for i = 1, 4 do
     translate(i)
   end, { repeating = true })
 end
+
 for i = 0, 9 do
   local ws = tostring(i)
   local name = ws
@@ -386,73 +386,11 @@ hl.bind('XF86AudioPlay', hl.dsp.exec_cmd 'playerctl play-pause', { locked = true
 hl.bind('XF86AudioPrev', hl.dsp.exec_cmd 'playerctl previous', { locked = true })
 
 -- Screenshot & Colorpicking
----@param func 'select' | 'snippet'
----@return string
-local function screenshot(func)
-  local script = [=[
-func="%s"
-cmd_screen="grim"
-cmd_select="slurp"
-cmd_freeze="hyprpicker -rz"
-cmd_edit="swappy -f -"
-cmd_copy="wl-copy"
-cmd_end="pkill ${cmd_freeze/%% *}"
-
-deps=("$cmd_screen" "$cmd_select")
-optdeps=("$cmd_edit" "$cmd_copy")
-if [[ "$func" == "snippet" ]]; then
-  optdeps+=("$cmd_freeze")
-fi
-
-track=0
-for dep in "${deps[@]}"; do
-  dep="${dep/%% *}"
-  if ! command -v "$dep"&>/dev/null; then 
-    hyprctl notify 3 5000 0 "Utility '$dep' is not installed."
-    track+=1
-  fi
-done
-if [[ $track -ne 0 ]]; then
-  exit 1
-fi
-
-for dep in "${optdeps[@]}"; do
-  dep="${dep/%% *}"
-  if ! command -v "$dep"&>/dev/null; then 
-    hyprctl notify 0 5000 0 "Utility '$dep' is not installed."
-  fi
-done
-
-if [[ "$func" == "snippet" ]]; then
-  cmd_select="slurp -F 'JetBrains Mono' -b a9b1d633 -c c0caf5 -w 1 -d"
-else
-  cmd_select="slurp -F 'JetBrainsMono' -B a9b1d633 -c c0caf5 -w 9 -o -r"
-fi
-cmd_screen="grim -g \"\$($cmd_select)\" -"
-
-cmd="$cmd_screen"
-if command -v "${cmd_edit/%% *}"&>/dev/null; then
-  cmd="$cmd | ($cmd_edit &)"
-elif command -v "${cmd_copy/%% *}"&>/dev/null; then
-  cmd="$cmd | $cmd_copy"
-else
-  cmd="$cmd&>/dev/null"
-fi
-
-if command -v "${cmd_freeze/%% *}"&>/dev/null; then
-  cmd="$cmd_freeze & sleep 0.05; $cmd; $cmd_end"
-fi
-
-eval "$cmd"
-]=]
-  return string.format(script, func)
-end
-
 hl.bind('Print', hl.dsp.exec_cmd(screenshot 'snippet'))
 hl.bind(k('SHIFT', 'Print'), hl.dsp.exec_cmd(screenshot 'select'))
-hl.bind(k('CTRL', 'Print'), hl.dsp.exec_cmd 'hyprpicker -rau 64 -s 4')
+hl.bind(k('ALT', 'Print'), hl.dsp.exec_cmd 'hyprpicker -rau 64 -s 4')
 
--- [[ WINDOW RULES ]]
+-- [[ WINDOWS ]]
 hl.window_rule {
   name = 'no-maximize',
   suppress_event = 'maximize',
@@ -482,77 +420,6 @@ hl.window_rule {
     focus = true,
   },
 }
-
--- Floating Windows
----@alias selections { c: string?, t: string?}[]
----@param regexes string[]
----@return string
-local function rc(regexes)
-  if #regexes < 1 then
-    return ''
-  end
-  local r = string.format('(%s)', regexes[1])
-  for i = 2, #regexes do
-    r = string.format('%s|(%s)', r, regexes[i])
-  end
-  return r
-end
-
----@param s string
----@return string
-local function n(s)
-  return 'negative:' .. s
-end
-
----@type selections
-local floats = {
-  { c = 'xdg-desktop-portal-gtk' },
-  { c = 'org.pulseaudio.pavucontrol' },
-  { c = 'org.gnome.FileRoller' },
-  { c = 'file-png' },
-
-  { c = 'firefox', t = 'Library' },
-  { c = 'Thunar', t = rc { 'Rename.*', 'File Operation Progress.*' } },
-
-  { c = 'gimp', t = n(rc { '.*- GIMP', 'GNU Image Manipulation Program' }) },
-  { c = 'org.inkscape.Inkscape', t = n '.*Inkscape$' },
-  { c = rc { 'obs', 'com.obsproject.Studio' }, t = n 'OBS .*' },
-}
-
-local floatclasses = {}
-local floattitles = {}
-for _, float in ipairs(floats) do
-  if float.c and float.t then
-    hl.window_rule {
-      float = true,
-      match = {
-        class = float.c,
-        title = float.t,
-      },
-      tag = '+float',
-    }
-  else
-    if float.c then
-      table.insert(floatclasses, float.c)
-    end
-    if float.t then
-      table.insert(floattitles, float.t)
-    end
-  end
-end
-
-hl.window_rule {
-  name = 'float-class',
-  float = true,
-  match = { class = rc(floatclasses) },
-  tag = '+float',
-}
-hl.window_rule {
-  name = 'float-title',
-  float = true,
-  match = { title = rc(floattitles) },
-  tag = '+float',
-}
 hl.window_rule {
   name = 'tag-floats',
   match = {
@@ -569,52 +436,11 @@ hl.window_rule {
   },
 }
 
--- Fullscreen Windows
----@type selections
-local fullscreens = {
-  { c = 'hl2_linux,' },
-  { c = 'cs2' },
-  { c = 'tf_linux64' },
-  { t = 'Marble Blast Ultra!.*' },
-  { t = 'UltraRebirth.*' },
-  { c = 'steam_app_\\d+', t = '.+' },
-}
-local fullscreenclasses = {}
-local fullscreentitles = {}
-for _, selection in ipairs(fullscreens) do
-  if selection.c and selection.t then
-    hl.window_rule {
-      fullscreen_state = '2 2',
-      match = {
-        class = selection.c,
-        title = selection.t,
-      },
-    }
-  else
-    if selection.c then
-      table.insert(fullscreenclasses, selection.c)
-    end
-    if selection.t then
-      table.insert(fullscreentitles, selection.t)
-    end
-  end
-end
-hl.window_rule {
-  name = 'fullscreen-class',
-  fullscreen_state = '2 2',
-  match = {
-    title = rc(fullscreenclasses),
-  },
-}
-hl.window_rule {
-  name = 'fullscreen-title',
-  fullscreen_state = '2 2',
-  match = {
-    title = rc(fullscreentitles),
-  },
-}
+-- Floating & Fullscreen Windows
+buildrules('float', floats, { float = true })
+buildrules('fullscreen', fullscreens, { fullscreen_state = '2 2' })
 
--- [[ WORKSPACE RULES ]]
+-- [[ WORKSPACES ]]
 hl.workspace_rule {
   workspace = 'name:0',
   monitor = monitors.desk_secondary,
@@ -634,7 +460,7 @@ hl.workspace_rule {
   decorate = false,
 }
 
--- [[ LAYER RULES ]]
+-- [[ LAYERS ]]
 hl.layer_rule {
   name = 'blur-backgrounds',
   blur = true,
@@ -653,3 +479,6 @@ hl.layer_rule {
   no_anim = true,
   match = { namespace = rc { 'hyprpicker', 'selection' } },
 }
+
+-- [[ EVENTS ]]
+buildresizes(resizes)
