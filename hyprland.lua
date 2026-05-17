@@ -1,7 +1,7 @@
 local utils = require 'hyprland-utils'
-local k, n, rc, border, buildresizes, buildrules, doubletap, gate, move_groupaware, screenshot, translate =
+local k, rn, rc, border, buildresizes, buildrules, doubletap, gate, move_groupaware, screenshot, translate =
   utils.k,
-  utils.n,
+  utils.rn,
   utils.rc,
   utils.border,
   utils.buildresizes,
@@ -40,7 +40,7 @@ local apps = {
 
 local startup = {
   'wlsunset -T 5800 -t 3400 -S 7:00 -s 18:00 -d 3600',
-  'hyprlock' .. '; ' .. cmds.refresh,
+  'hyprlock',
 }
 
 local services = {
@@ -65,9 +65,9 @@ local floats = {
   { c = 'firefox', t = 'Library' },
   { c = 'Thunar', t = rc { 'Rename.*', 'File Operation Progress.*' } },
 
-  { c = 'gimp', t = n(rc { '.*- GIMP', 'GNU Image Manipulation Program' }) },
-  { c = 'org.inkscape.Inkscape', t = n '.*Inkscape$' },
-  { c = rc { 'obs', 'com.obsproject.Studio' }, t = n 'OBS .*' },
+  { c = 'gimp', t = rn(rc { '.*- GIMP', 'GNU Image Manipulation Program' }) },
+  { c = 'org.inkscape.Inkscape', t = rn '.*Inkscape$' },
+  { c = rc { 'obs', 'com.obsproject.Studio' }, t = rn 'OBS .*' },
 }
 
 ---@type selections
@@ -89,9 +89,11 @@ local resizes = {
 }
 
 local colors = {
-  bg = '#414868',
-  bg_dark = '#16161e',
+  border = '#414868',
+  bg = '#1f2231',
+  shadow = '#16161e',
   fg = '#c0caf5',
+  comment = '#565f89',
   blue = '#7aa2f7',
   cyan = '#7dcfff',
   yellow = '#e08f68',
@@ -106,6 +108,15 @@ local alphas = {
   mid = 'cc',
   low = 'aa',
 }
+
+-- [[ ENVIRONMENT ]]
+-- Theming
+hl.env('HYPRCURSOR_THEME', 'Bibata-Modern-Classic')
+hl.env('QT_STYLE_OVERRIDE', 'kvantum')
+
+-- Fixes
+hl.env('QT_QPA_PLATFORM', 'wayland')
+hl.env('ELECTRON_OZONE_PLATFORM_HINT', 'auto')
 
 -- [[ MONITORS ]]
 hl.monitor {
@@ -150,13 +161,11 @@ hl.config {
 
     col = {
       active_border = border(colors.blue, colors.cyan),
-      inactive_border = colors.bg .. alphas.mid,
+      inactive_border = colors.border .. alphas.mid,
     },
   },
 
   group = {
-    drag_into_group = 2,
-
     col = {
       border_active = border(colors.yellow, colors.orange),
       border_inactive = colors.yellow_bg .. alphas.mid,
@@ -166,16 +175,25 @@ hl.config {
 
     groupbar = {
       text_color = colors.fg,
+      text_color_inactive = colors.comment,
+      text_padding = 2,
       font_family = 'JetBrainsMono NF ExtraBold, Sans',
       font_size = 15,
 
-      round_only_edges = false,
+      height = 18,
+      indicator_height = 0,
+      gradients = true,
+      gradient_rounding = 4,
+      gradient_round_only_edges = false,
+      gaps_in = 1,
+      gaps_out = 2,
+      keep_upper_gap = false,
 
       col = {
-        active = colors.orange .. alphas.high,
-        inactive = colors.yellow_bg .. alphas.mid,
-        locked_active = colors.red .. alphas.high,
-        locked_inactive = colors.orange_bg .. alphas.mid,
+        active = colors.bg,
+        inactive = colors.bg .. alphas.low,
+        locked_active = colors.bg,
+        locked_inactive = colors.bg .. alphas.low,
       },
     },
   },
@@ -198,8 +216,8 @@ hl.config {
     },
 
     shadow = {
-      color = colors.bg_dark .. alphas.low,
-      color_inactive = colors.bg_dark .. alphas.high,
+      color = colors.shadow .. alphas.low,
+      color_inactive = colors.shadow .. alphas.high,
     },
 
     glow = {
@@ -251,9 +269,6 @@ hl.config {
     force_default_wallpaper = 3,
     disable_hyprland_logo = true,
 
-    enable_swallow = true,
-    swallow_regex = '^(footclient)|(Thunar)$',
-
     anr_missed_pings = 15,
   },
 }
@@ -293,7 +308,7 @@ hl.bind(k('SUPER', 'Q'), hl.dsp.exec_cmd(apps.power), { desc = 'Quit' })
 hl.bind(k('SUPER', 'W'), hl.dsp.exec_cmd(cmds.opener .. apps.notes), { desc = 'Write' })
 hl.bind(k('SUPER', 'E'), hl.dsp.exec_cmd(apps.emoji), { desc = 'Emoji' })
 hl.bind(k('SUPER', 'R'), hl.dsp.exec_cmd(cmds.refresh), { desc = 'Refresh' })
--- hl.bind(k('SUPER', 'A'), hl.dsp.exec_cmd(apps.menu), { desc = 'Application' })
+hl.bind(k('SUPER', 'A'), hl.dsp.exec_cmd(apps.menu), { desc = 'Application' })
 hl.bind(k('SUPER', 'S'), function()
   local special = hl.get_active_special_workspace()
   if special and special.tiled_layout == 'scrolling' then
@@ -410,30 +425,23 @@ hl.window_rule {
 }
 hl.window_rule {
   name = 'dim-solo-borders',
-  border_color = colors.bg .. alphas.mid,
-  match = { workspace = 'w[t1]w[f0]' },
+  border_color = colors.border .. alphas.mid,
+  match = { workspace = 'w[t1]w[f0]', group = false },
 }
 hl.window_rule {
   name = 'inhibit-idle',
   idle_inhibit = 'fullscreen',
-  match = {
-    focus = true,
-  },
+  match = { focus = true },
 }
 hl.window_rule {
   name = 'tag-floats',
-  match = {
-    float = true,
-    fullscreen = false,
-  },
+  match = { float = true, fullscreen = false },
   tag = '+float',
 }
 hl.window_rule {
   name = 'persistent-size',
   persistent_size = true,
-  match = {
-    tag = 'float',
-  },
+  match = { tag = 'float' },
 }
 
 -- Floating & Fullscreen Windows
@@ -492,3 +500,8 @@ hl.layer_rule {
 
 -- [[ EVENTS ]]
 buildresizes(resizes)
+hl.on('window.close', function(win)
+  if win.group and win.group.size <= 2 then
+    hl.dispatch(hl.dsp.group.toggle(win))
+  end
+end)

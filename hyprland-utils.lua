@@ -94,7 +94,7 @@ end
 
 ---@param s string
 ---@return string
-function M.n(s)
+function M.rn(s)
   return 'negative:' .. s
 end
 
@@ -149,12 +149,14 @@ function M.buildresizes(resizes)
     local dist = win.monitor.width / 20
     local mid = win.monitor.width / 2
     for _, resize in pairs(resizes) do
-      local c = string.match(win.class, '^' .. resize.c .. '$')
-      local t = string.match(win.title, '^' .. resize.t .. '$')
-      if (c and t) or (c and not t) or (not c and t) then
-        local x = resize.x and (mid + dist * resize.x) or win.size.x
-        local y = resize.y and (mid + dist * resize.y) or win.size.y
-        hl.dispatch(hl.dsp.window.resize { x = x, y = y, window = win })
+      local c = string.match(win.class, string.format('^%s$', resize.c))
+      local t = string.match(win.title, string.format('^%s$', resize.t))
+      if (c and resize.c) and (t and resize.t) then
+        hl.dispatch(hl.dsp.window.resize {
+          x = resize.x and (mid + dist * resize.x) or win.size.x,
+          y = resize.y and (mid + dist * resize.y) or win.size.y,
+          window = win,
+        })
         return
       end
     end

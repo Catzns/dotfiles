@@ -13,8 +13,6 @@ waybar.json	~/.config/waybar/config.jsonc
 waybar.css	~/.config/waybar/style.css
 swaync.json	~/.config/swaync/config.json
 swaync.css	~/.config/swaync/style.css
-uwsm.rc	~/.config/uwsm/env
-uwsm-hyprland.rc	~/.config/uwsm/env-hyprland
 rofi-desktop.rasi	~/.config/rofi/desktop.rasi
 rofi-power.rasi	~/.config/rofi/power.rasi
 rofi-power.sh	~/.config/rofi/scripts/power.sh
@@ -29,3 +27,4 @@ yazi-theme.toml	~/.config/yazi/theme.toml
 .stylua.toml	~/.config/nvim/.stylua.toml
 hyprland-platform.conf	~/.config/hypr/hyprland-platform.conf
 hyprland-utils.lua	~/.config/hypr/hyprland-utils.lua
+profile.rc	~/.profile
