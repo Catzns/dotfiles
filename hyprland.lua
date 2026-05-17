@@ -24,18 +24,18 @@ local monitors = {
 
 local cmds = {
   init = 'systemctl --user start ',
-  opener = 'uwsm-app -- ',
+  opener = 'gtk-launch ',
   refresh = 'pkill -SIGUSR2 waybar',
   logout = 'loginctl terminate-user ""',
 }
 
 local apps = {
   power = 'rofi -show power -theme power -mode power',
-  terminal = 'footclient.desktop',
-  menu = 'rofi -show drun -theme desktop -run-command "uwsm-app -- {cmd}"',
+  terminal = 'footclient',
+  menu = 'rofi -show drun -theme desktop',
   emoji = 'rofimoji --selector-args "-theme emoji"',
-  files = 'thunar.desktop',
-  notes = 'obsidian.desktop',
+  files = 'thunar',
+  notes = 'obsidian',
 }
 
 local startup = {
@@ -146,7 +146,7 @@ hl.on('hyprland.start', function()
     hl.exec_cmd(cmds.init .. service)
   end
   for _, program in ipairs(startup) do
-    hl.exec_cmd(cmds.opener .. program)
+    hl.exec_cmd(program)
   end
 end)
 
@@ -305,7 +305,7 @@ hl.bind(k('SUPER', 'SUPER_L'), function()
   end, super, 250)
 end, { ignore_mods = true, desc = 'Launcher' })
 hl.bind(k('SUPER', 'Q'), hl.dsp.exec_cmd(apps.power), { desc = 'Quit' })
-hl.bind(k('SUPER', 'W'), hl.dsp.exec_cmd(cmds.opener .. apps.notes), { desc = 'Write' })
+hl.bind(k('SUPER', 'W'), hl.dsp.exec_cmd(apps.notes), { desc = 'Write' })
 hl.bind(k('SUPER', 'E'), hl.dsp.exec_cmd(apps.emoji), { desc = 'Emoji' })
 hl.bind(k('SUPER', 'R'), hl.dsp.exec_cmd(cmds.refresh), { desc = 'Refresh' })
 hl.bind(k('SUPER', 'A'), hl.dsp.exec_cmd(apps.menu), { desc = 'Application' })
@@ -317,7 +317,7 @@ hl.bind(k('SUPER', 'S'), function()
     hl.dispatch(hl.dsp.layout 'togglesplit')
   end
 end, { desc = 'Swap / Shrink' })
-hl.bind(k('SUPER', 'D'), hl.dsp.exec_cmd(cmds.opener .. apps.files), { desc = 'Directory' })
+hl.bind(k('SUPER', 'D'), hl.dsp.exec_cmd(apps.files), { desc = 'Directory' })
 hl.bind(k('SUPER', 'F'), hl.dsp.window.float(), { desc = 'Float' })
 hl.bind(k('SUPER', 'Z'), hl.dsp.group.toggle(), { desc = 'Zip' })
 hl.bind(k('SUPER', 'X'), hl.dsp.window.close(), { desc = 'eXit' })
@@ -334,7 +334,7 @@ hl.bind(k('SUPER', 'C'), function()
       return
     end
   end
-  hl.exec_cmd(cmds.opener .. apps.terminal)
+  hl.exec_cmd(apps.terminal)
 end, { desc = 'Console' })
 hl.bind(
   k('SUPER', 'V'),
