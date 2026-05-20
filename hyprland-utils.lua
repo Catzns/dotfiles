@@ -9,6 +9,73 @@ local M = {}
 ---@alias selections { c: string?, t: string? }[]
 ---@alias resizes { c: string?, t: string?, x: integer?, y: integer? }[]
 
+-- [[ GENERIC ]]
+---@param value number
+---@param size number
+---@return number
+function M.mod(value, size)
+  return value ~= 0 and ((value - 1) % size) + 1 or 0
+end
+
+---@param v any
+---@param n integer
+function M.dup(v, n)
+  local dups = {}
+  for _ = 1, n do
+    table.insert(dups, v)
+  end
+  return unpack(dups)
+end
+
+-- [[ MONITORS ]]
+---@return { name: string, pos: string, scale: string }[]?
+function M.buildmonitors()
+  local monitors = {}
+  local count = 1
+  local name = os.getenv 'MONITOR1NAME'
+  local pos = os.getenv 'MONITOR1POS'
+  local scale = os.getenv 'MONITOR1SCALE'
+  while name do
+    table.insert(monitors, {
+      name = name,
+      pos = pos or 'auto',
+      scale = scale or 'auto',
+    })
+    count = count + 1
+    name = os.getenv(string.format('MONITOR%dNAME', count))
+    pos = os.getenv(string.format('MONITOR%dPOS', count))
+    scale = os.getenv(string.format('MONITOR%dSCALE', count))
+  end
+  return monitors
+end
+
+local mons = {}
+for _, wsp in pairs(hl.get_workspaces()) do
+  mons[wsp.name] = wsp.monitor
+end
+---@param wsp HL.Workspace?
+---@return HL.Monitor?
+function M.montrack(wsp)
+  if not wsp then
+    return nil
+  end
+  local mon = mons and mons[wsp.name] or nil
+  mons[wsp.name] = wsp.monitor
+  return mon
+end
+
+local ws = hl.get_active_workspace()
+---@param new HL.Workspace?
+---@return HL.Workspace?
+function M.wstrack(new)
+  if not new then
+    return nil
+  end
+  local old = ws
+  ws = new
+  return old
+end
+
 -- [[ AESTHETICS ]]
 ---@param top string
 ---@param bottom string
@@ -18,6 +85,40 @@ function M.border(top, bottom)
     colors = { top .. alphas.high, bottom .. alphas.high },
     angle = 80,
   }
+end
+
+---@return string[]?
+function M.buildbackgrounds()
+  local backgrounds = {}
+  local count = 1
+  local background = os.getenv 'BACKGROUND1'
+  while background do
+    table.insert(backgrounds, background)
+    count = count + 1
+    background = os.getenv(string.format('BACKGROUND%d', count))
+  end
+  return backgrounds
+end
+
+---@param bgs string[]?
+---@param s string
+---@return string?
+function M.fetchbackground(bgs, s)
+  if not bgs then
+    return nil
+  end
+  local named = os.getenv(string.format('BACKGROUND%s', s))
+  if named then
+    return named
+  end
+  local numbered = tonumber(s)
+  if numbered then
+    if numbered == 0 then
+      numbered = 10
+    end
+    return bgs[M.mod(numbered, #bgs)]
+  end
+  return nil
 end
 
 -- [[ KEYBINDS ]]
@@ -98,29 +199,21 @@ function M.rn(s)
   return 'negative:' .. s
 end
 
-function M.extend(t1, t2)
-  for i, v in pairs(t2) do
-    t1[i] = v
-  end
-  return t1
-end
-
 -- [[ WINDOWS ]]
 ---@param name string
 ---@param selections selections
----@param rules table
-function M.buildrules(name, selections, rules)
+function M.buildrules(name, selections)
   local classes = {}
   local titles = {}
   for _, sel in ipairs(selections) do
     if sel.c and sel.t then
-      hl.window_rule(M.extend({
+      hl.window_rule {
         match = {
           class = sel.c,
           title = sel.t,
         },
         tag = '+' .. name,
-      }, rules))
+      }
     else
       if sel.c then
         table.insert(classes, sel.c)
@@ -130,16 +223,20 @@ function M.buildrules(name, selections, rules)
       end
     end
   end
-  hl.window_rule(M.extend({
-    name = name .. '-class',
-    match = { class = M.rc(classes) },
-    tag = '+' .. name,
-  }, rules))
-  hl.window_rule(M.extend({
-    name = name .. '-title',
-    match = { title = M.rc(titles) },
-    tag = '+' .. name,
-  }, rules))
+  if #classes > 0 then
+    hl.window_rule {
+      name = name .. '-class',
+      match = { class = M.rc(classes) },
+      tag = '+' .. name,
+    }
+  end
+  if #titles > 0 then
+    hl.window_rule {
+      name = name .. '-title',
+      match = { title = M.rc(titles) },
+      tag = '+' .. name,
+    }
+  end
 end
 
 -- [[ EVENTS ]]

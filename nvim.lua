@@ -1027,7 +1027,7 @@ require('lazy').setup {
         {
           '<leader>p',
           function()
-            Snacks.picker.yanky()
+            Snacks.picker.yanky() ---@diagnostic disable-line:undefined-field
           end,
           desc = '[p]ut from Yankring',
         },
@@ -1530,6 +1530,7 @@ require('lazy').setup {
             },
           },
         }
+        ---@diagnostic disable:undefined-field, deprecated
         require('lualine').setup {
           sections = {
             lualine_x = {
@@ -1543,6 +1544,7 @@ require('lazy').setup {
             },
           },
         }
+        ---@diagnostic enable:undefined-field, deprecated
       end,
       keys = {
         { '<leader>n', '<CMD>Noice<CR>', mode = { 'n', 'x' }, desc = 'Open [n]otifications' },
