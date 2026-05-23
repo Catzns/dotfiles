@@ -599,7 +599,6 @@ require('lazy').setup {
         require('snacks').setup {
           quickfile = { enabled = true },
           bigfile = { enabled = true },
-          dashboard = { enabled = true },
           input = { enabled = true },
           notifier = { enabled = true },
           bufdelete = { enabled = true },

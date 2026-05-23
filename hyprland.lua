@@ -40,6 +40,7 @@ local floats = {
   { c = 'org.pulseaudio.pavucontrol' },
   { c = 'org.gnome.FileRoller' },
   { c = 'file-png' },
+  { c = 'org.keepassxc.KeePassXC' },
 
   { c = 'firefox', t = 'Library' },
   { c = 'thunar', t = u.rc { 'Rename.*', 'File Operation Progress.*' } },
@@ -66,6 +67,12 @@ local resizes = {
   -- c: Class names, t: Title names
   -- x & y: Steps left / right ranging -10..10
   { c = 'steam', t = 'Friends List', x = -5 },
+}
+
+---@type selections
+local privates = {
+  -- c: Class names, t: Title names
+  { c = 'org.keepassxc.KeePassXC' },
 }
 
 local colors = {
@@ -95,13 +102,14 @@ hl.exec_cmd '. ~/.profile'
 -- Theming
 hl.env('HYPRCURSOR_THEME', 'Bibata-Modern-Classic')
 hl.env('QT_STYLE_OVERRIDE', 'kvantum')
+hl.env('QT_QPA_PLATFORMTHEME', 'kvantum')
 
 -- Background Transitions
 hl.env('AWWW_TRANSITION', 'wipe')
-hl.env('AWWW_TRANSITION_STEP', '51')
 hl.env('AWWW_TRANSITION_FPS', '60')
-hl.env('AWWW_TRANSITION_DURATION', '0.2')
+hl.env('AWWW_TRANSITION_DURATION', '0.15')
 hl.env('AWWW_TRANSITION_BEZIER', '0.15,0,0.1,1')
+local transstep = 0.0625
 
 -- Fixes
 hl.env('QT_QPA_PLATFORM', 'wayland')
@@ -129,7 +137,7 @@ hl.monitor {
 
 -- [[ INITIALIZATION ]]
 u.wstrack(hl.get_active_workspace())
-local bgs = u.buildbackgrounds()
+u.buildbackgrounds()
 
 hl.on('hyprland.start', function()
   local tracking = hl.get_config 'misc.initial_workspace_tracking'
@@ -410,6 +418,11 @@ hl.window_rule {
   match = { class = '.*' },
 }
 hl.window_rule {
+  name = 'persistent-size',
+  persistent_size = true,
+  match = { class = '.*' },
+}
+hl.window_rule {
   name = 'fix-xwayland-drags',
   no_focus = true,
   match = {
@@ -431,29 +444,39 @@ hl.window_rule {
   idle_inhibit = 'fullscreen',
   match = { focus = true },
 }
+
+-- Floating Windows
+u.buildrules('float', floats)
 hl.window_rule {
   name = 'tag-floats',
   match = { float = true, fullscreen = false },
   tag = '+float',
 }
 hl.window_rule {
-  name = 'persistent-size',
-  persistent_size = true,
-  match = { tag = 'float' },
-}
-
--- Floating & Fullscreen Windows
-u.buildrules('float', floats)
-u.buildrules('fullscreen', fullscreens)
-hl.window_rule {
   name = 'float-tagged',
   float = true,
   match = { tag = 'float' },
+}
+
+-- Fullscreen Windows
+u.buildrules('fullscreen', fullscreens)
+hl.window_rule {
+  name = 'tag-fullscreens',
+  match = { fullscreen = true },
+  tag = '+fullscreen',
 }
 hl.window_rule {
   name = 'fullscreen-tagged',
   fullscreen_state = '2 2',
   match = { tag = 'fullscreen' },
+}
+
+-- Block private windows from screen recorders
+u.buildrules('private', privates)
+hl.window_rule {
+  name = 'block-tagged',
+  no_screen_share = true,
+  match = { tag = 'private' },
 }
 
 -- [[ WORKSPACES ]]
@@ -525,30 +548,28 @@ end)
 hl.on('monitor.focused', function(mon)
   u.wstrack(mon.active_workspace)
 end)
+-- Switch wallpapers on workspace switch
 hl.on('workspace.active', function(ws)
   local old = u.wstrack(ws)
-  if not old or old.monitor ~= ws.monitor then
-    return
+  for _, win in ipairs(ws.get_windows(old)) do
+    if not win.floating then
+      u.runawwwstatic(ws)
+      return
+    end
   end
-  local angle = old and old.name > ws.name and 180 or 0
-  local str = string.format(
-    'awww img --outputs %s --transition-fps %d --transition-angle %d %s',
-    ws.monitor.name,
-    math.ceil(ws.monitor.refresh_rate),
-    angle,
-    u.fetchbackground(bgs, ws.name)
-  )
-  hl.exec_cmd(str)
+  local step = u.secs2step(transstep, ws.monitor.refresh_rate)
+  local angle = old and math.abs(old.id) > math.abs(ws.id) and 175 or 5
+  u.runawwwanim(ws, step, angle)
 end)
 hl.on('workspace.move_to_monitor', function(ws, mon)
   local old = u.montrack(ws)
-  local angle = old and old.position.x > mon.position.x and 180 or 0
-  local str = string.format(
-    'awww img --outputs %s --transition-fps %d --transition-angle %d %s',
-    ws.monitor.name,
-    math.ceil(ws.monitor.refresh_rate),
-    angle,
-    u.fetchbackground(bgs, ws.name)
-  )
-  hl.exec_cmd(str)
+  for _, win in ipairs(ws.get_windows(old.active_workspace)) do
+    if not win.floating then
+      u.runawwwstatic(ws)
+      return
+    end
+  end
+  local step = u.secs2step(transstep, mon.refresh_rate)
+  local angle = old and old.position.x > mon.position.x and 175 or 5
+  u.runawwwanim(ws, step, angle)
 end)

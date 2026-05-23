@@ -14,8 +14,8 @@ export MONITOR1POS="auto-right" # A constant i.e. 0x0 or one of auto-left/down/u
 export MONITOR1SCALE="1"
 
 # Wallpapers
-# A list of images to use for backgrounds, configured per-workspace
+# A 0-indexed list of images to use for backgrounds, configured per-workspace
 # BACKGROUND[workspace-name]="$HOME/path/to/image.png"
-export BACKGROUND1="$HOME/foo/bar.png"
-export BACKGROUND2="$HOME/yolo/swag.png"
+export BACKGROUND0="$HOME/foo/bar.png"
+export BACKGROUND1="$HOME/yolo/swag.png"
 export BACKGROUNDspecial="$HOME/etc/etc/etc.png"

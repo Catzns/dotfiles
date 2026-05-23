@@ -53,13 +53,10 @@ local mons = {}
 for _, wsp in pairs(hl.get_workspaces()) do
   mons[wsp.name] = wsp.monitor
 end
----@param wsp HL.Workspace?
----@return HL.Monitor?
+---@param wsp HL.Workspace
+---@return HL.Monitor
 function M.montrack(wsp)
-  if not wsp then
-    return nil
-  end
-  local mon = mons and mons[wsp.name] or nil
+  local mon = mons[wsp.name]
   mons[wsp.name] = wsp.monitor
   return mon
 end
@@ -76,6 +73,16 @@ function M.wstrack(new)
   return old
 end
 
+---@param sec number
+---@param hz number
+---@return integer
+function M.secs2step(sec, hz)
+  if sec == 0 then
+    return 255
+  end
+  return math.floor((256 / hz) * (1 / sec))
+end
+
 -- [[ AESTHETICS ]]
 ---@param top string
 ---@param bottom string
@@ -87,38 +94,54 @@ function M.border(top, bottom)
   }
 end
 
+local bgs = {}
 ---@return string[]?
 function M.buildbackgrounds()
-  local backgrounds = {}
-  local count = 1
-  local background = os.getenv 'BACKGROUND1'
-  while background do
-    table.insert(backgrounds, background)
-    count = count + 1
-    background = os.getenv(string.format('BACKGROUND%d', count))
+  for i = 0, 9 do
+    local bg = os.getenv(string.format('BACKGROUND%d', i))
+    if bg then
+      bgs[i] = bg
+    end
   end
-  return backgrounds
+  return bgs
 end
 
----@param bgs string[]?
 ---@param s string
 ---@return string?
-function M.fetchbackground(bgs, s)
+function M.fetchbackground(s)
   if not bgs then
     return nil
+  end
+  local numbered = tonumber(s)
+  if numbered then
+    return bgs[numbered % (#bgs + 1)]
   end
   local named = os.getenv(string.format('BACKGROUND%s', s))
   if named then
     return named
   end
-  local numbered = tonumber(s)
-  if numbered then
-    if numbered == 0 then
-      numbered = 10
-    end
-    return bgs[M.mod(numbered, #bgs)]
-  end
   return nil
+end
+
+---@param wsp HL.Workspace
+---@param step integer
+---@param angle number
+function M.runawwwanim(wsp, step, angle)
+  local name = wsp.name
+  local mon = wsp.monitor.name
+  local bg = M.fetchbackground(name)
+  local hz = math.ceil(wsp.monitor.refresh_rate)
+  hl.dispatch(
+    hl.dsp.exec_cmd(string.format('awww img --outputs %s --transition-fps %d --transition-step %d --transition-angle %d %s', mon, hz, step, angle, bg))
+  )
+end
+
+---@param wsp HL.Workspace
+function M.runawwwstatic(wsp)
+  local name = wsp.name
+  local mon = wsp.monitor.name
+  local bg = M.fetchbackground(name)
+  hl.exec_cmd(string.format('awww img --outputs %s --transition-type none %s', mon, bg))
 end
 
 -- [[ KEYBINDS ]]
@@ -208,11 +231,11 @@ function M.buildrules(name, selections)
   for _, sel in ipairs(selections) do
     if sel.c and sel.t then
       hl.window_rule {
+        tag = '+' .. name,
         match = {
           class = sel.c,
           title = sel.t,
         },
-        tag = '+' .. name,
       }
     else
       if sel.c then
@@ -226,15 +249,15 @@ function M.buildrules(name, selections)
   if #classes > 0 then
     hl.window_rule {
       name = name .. '-class',
-      match = { class = M.rc(classes) },
       tag = '+' .. name,
+      match = { class = M.rc(classes) },
     }
   end
   if #titles > 0 then
     hl.window_rule {
       name = name .. '-title',
-      match = { title = M.rc(titles) },
       tag = '+' .. name,
+      match = { title = M.rc(titles) },
     }
   end
 end
