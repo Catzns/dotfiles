@@ -53,9 +53,12 @@ local mons = {}
 for _, wsp in pairs(hl.get_workspaces()) do
   mons[wsp.name] = wsp.monitor
 end
----@param wsp HL.Workspace
+---@param wsp HL.Workspace?
 ---@return HL.Monitor
 function M.montrack(wsp)
+  if not wsp then
+    return mons[1]
+  end
   local mon = mons[wsp.name]
   mons[wsp.name] = wsp.monitor
   return mon
@@ -145,12 +148,12 @@ function M.runawwwstatic(wsp)
 end
 
 -- [[ KEYBINDS ]]
----@param mod string
+---@param first string
 ---@param ... string
 ---@return string
-function M.k(mod, ...)
+function M.k(first, ...)
   local keys = { ... }
-  local combo = mod
+  local combo = 'SUPER + ' .. first
   for _, key in ipairs(keys) do
     combo = combo .. ' + ' .. key
   end
@@ -175,6 +178,13 @@ function M.doubletap(callback, gated, timeout)
   else
     callback()
   end
+end
+
+function M.focus_groupaware(dir)
+  local config = hl.get_config 'binds.movefocus_cycles_groupfirst'
+  hl.config { binds = { movefocus_cycles_groupfirst = true } }
+  hl.dispatch(hl.dsp.focus { direction = dir })
+  hl.config { binds = { movefocus_cycles_groupfirst = config } }
 end
 
 ---@param dir string
@@ -223,6 +233,16 @@ function M.rn(s)
 end
 
 -- [[ WINDOWS ]]
+---@type HL.Window?
+local wintrack
+---@param win HL.Window?
+---@return HL.Window?
+function M.wintrack(win)
+  local old = wintrack
+  wintrack = win
+  return old or nil
+end
+
 ---@param name string
 ---@param selections selections
 function M.buildrules(name, selections)
@@ -266,15 +286,27 @@ end
 ---@param resizes resizes
 function M.buildresizes(resizes)
   hl.on('window.open', function(win)
+    local old = M.wintrack(win)
+    if not old or win.workspace.windows < 2 then
+      return
+    end
     local dist = win.monitor.width / 20
     local mid = win.monitor.width / 2
     for _, resize in pairs(resizes) do
       local c = string.match(win.class, string.format('^%s$', resize.c))
       local t = string.match(win.title, string.format('^%s$', resize.t))
-      if (c and resize.c) and (t and resize.t) then
+      if (not c == not resize.c) and (not t == not resize.t) then
+        local rx = resize.x
+        local ry = resize.y
+        if rx and old.at.x < win.at.x then
+          rx = -rx
+        end
+        if ry and old.at.y < win.at.y then
+          ry = -ry
+        end
         hl.dispatch(hl.dsp.window.resize {
-          x = resize.x and (mid + dist * resize.x) or win.size.x,
-          y = resize.y and (mid + dist * resize.y) or win.size.y,
+          x = rx and (mid + dist * rx) or win.size.x,
+          y = ry and (mid + dist * ry) or win.size.y,
           window = win,
         })
         return

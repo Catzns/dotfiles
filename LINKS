@@ -27,3 +27,4 @@ yazi-theme.toml	~/.config/yazi/theme.toml
 .stylua.toml	~/.config/nvim/.stylua.toml
 hyprland-platform.conf	~/.config/hypr/hyprland-platform.conf
 hyprland-utils.lua	~/.config/hypr/hyprland-utils.lua
+quickshell.qml	~/.config/quickshell/shell.qml

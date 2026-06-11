@@ -12,6 +12,7 @@ local apps = {
   emoji = 'rofimoji --selector-args "-theme emoji"',
   files = 'thunar',
   notes = 'obsidian',
+  password = 'keepassxc',
 }
 
 local startup = {
@@ -101,18 +102,20 @@ hl.exec_cmd '. ~/.profile'
 
 -- Theming
 hl.env('HYPRCURSOR_THEME', 'Bibata-Modern-Classic')
-hl.env('QT_STYLE_OVERRIDE', 'kvantum')
-hl.env('QT_QPA_PLATFORMTHEME', 'kvantum')
 
 -- Background Transitions
 hl.env('AWWW_TRANSITION', 'wipe')
 hl.env('AWWW_TRANSITION_FPS', '60')
-hl.env('AWWW_TRANSITION_DURATION', '0.15')
+hl.env('AWWW_TRANSITION_DURATION', '0.2')
 hl.env('AWWW_TRANSITION_BEZIER', '0.15,0,0.1,1')
 local transstep = 0.0625
 
 -- Fixes
+hl.env('GTK_BACKEND', 'wayland,x11,*')
 hl.env('QT_QPA_PLATFORM', 'wayland')
+hl.env('QT_QPA_PLATFORMTHEME', 'qt6ct')
+hl.env('SDL_VIDEODRIVER', 'wayland')
+hl.env('CLUTTER_BACKEND', 'wayland')
 hl.env('ELECTRON_OZONE_PLATFORM_HINT', 'auto')
 
 -- [[ MONITORS ]]
@@ -136,14 +139,19 @@ hl.monitor {
 }
 
 -- [[ INITIALIZATION ]]
-u.wstrack(hl.get_active_workspace())
-u.buildbackgrounds()
+local function init()
+  local wsp = hl.get_active_workspace()
+  u.wstrack(wsp)
+  u.montrack(wsp)
+  u.buildbackgrounds()
+end
+init()
 
 hl.on('hyprland.start', function()
   local tracking = hl.get_config 'misc.initial_workspace_tracking'
   hl.config { misc = { initial_workspace_tracking = 0 } }
   for _, program in pairs(startup) do
-    hl.dispatch(hl.dsp.exec_cmd(program))
+    hl.exec_cmd(program)
   end
   hl.config { misc = { initial_workspace_tracking = tracking } }
 end)
@@ -235,6 +243,7 @@ hl.config {
 
   dwindle = {
     preserve_split = true,
+    split_bias = 1,
   },
 
   input = {
@@ -256,7 +265,6 @@ hl.config {
     workspace_center_on = 1,
     workspace_back_and_forth = true,
     hide_special_on_workspace_change = true,
-    movefocus_cycles_groupfirst = true,
   },
 
   render = {
@@ -303,14 +311,14 @@ hl.gesture {
 
 -- [[ KEYBINDS ]]
 -- Applications & Functions
-hl.bind(u.k('SUPER', 'P'), hl.dsp.exec_cmd 'pkill -USR2 hyprlock', { locked = true })
-hl.bind(u.k('SUPER', 'Escape'), hl.dsp.exec_cmd(cmds.logout))
-hl.bind(u.k('SUPER', 'Q'), hl.dsp.exec_cmd(apps.power), { desc = '[Q]uit' })
-hl.bind(u.k('SUPER', 'W'), hl.dsp.exec_cmd(apps.notes), { desc = '[W]rite' })
-hl.bind(u.k('SUPER', 'E'), hl.dsp.exec_cmd(apps.emoji), { desc = '[E]moji' })
-hl.bind(u.k('SUPER', 'R'), hl.dsp.exec_cmd(cmds.refresh), { desc = '[R]efresh' })
-hl.bind(u.k('SUPER', 'A'), hl.dsp.exec_cmd(apps.menu), { desc = '[A]pplication' })
-hl.bind(u.k('SUPER', 'S'), function()
+hl.bind(u.k 'Escape', hl.dsp.exec_cmd(cmds.logout))
+hl.bind(u.k 'Q', hl.dsp.exec_cmd(apps.power), { desc = '[Q]uit' })
+hl.bind(u.k 'W', hl.dsp.exec_cmd(apps.notes), { desc = '[W]rite' })
+hl.bind(u.k 'E', hl.dsp.exec_cmd(apps.emoji), { desc = '[E]moji' })
+hl.bind(u.k 'R', hl.dsp.exec_cmd(cmds.refresh), { desc = '[R]efresh' })
+hl.bind(u.k 'P', hl.dsp.exec_cmd(apps.password), { desc = '[P]asswords' })
+hl.bind(u.k 'A', hl.dsp.exec_cmd(apps.menu), { desc = '[A]pplication' })
+hl.bind(u.k 'S', function()
   local special = hl.get_active_special_workspace()
   if special and special.tiled_layout == 'scrolling' then
     hl.dispatch(hl.dsp.layout 'fit all')
@@ -318,11 +326,11 @@ hl.bind(u.k('SUPER', 'S'), function()
     hl.dispatch(hl.dsp.layout 'togglesplit')
   end
 end, { desc = 'Swap / Shrink' })
-hl.bind(u.k('SUPER', 'D'), hl.dsp.exec_cmd(apps.files), { desc = '[D]irectory' })
-hl.bind(u.k('SUPER', 'F'), hl.dsp.window.float(), { desc = '[F]loat' })
-hl.bind(u.k('SUPER', 'Z'), hl.dsp.group.toggle(), { desc = '[Z]ip' })
-hl.bind(u.k('SUPER', 'X'), hl.dsp.window.close(), { desc = 'e[X]it' })
-hl.bind(u.k('SUPER', 'C'), function()
+hl.bind(u.k 'D', hl.dsp.exec_cmd(apps.files), { desc = '[D]irectory' })
+hl.bind(u.k 'F', hl.dsp.window.float(), { desc = '[F]loat' })
+hl.bind(u.k 'Z', hl.dsp.group.toggle(), { desc = '[Z]ip' })
+hl.bind(u.k 'X', hl.dsp.window.close(), { desc = 'e[X]it' })
+hl.bind(u.k 'C', function()
   local terms = { 'foot', 'footclient' }
   local win = hl.get_active_window()
   for _, term in ipairs(terms) do
@@ -335,9 +343,9 @@ hl.bind(u.k('SUPER', 'C'), function()
       return
     end
   end
-  hl.dispatch(hl.dsp.exec_cmd(apps.terminal))
+  hl.exec_cmd(apps.terminal)
 end, { desc = '[C]onsole' })
-hl.bind(u.k('SUPER', 'V'), function()
+hl.bind(u.k 'V', function()
   if hl.get_config 'cursor.zoom_factor' == 1 then
     hl.config { cursor = { zoom_factor = 2 } }
   else
@@ -359,18 +367,26 @@ local move = {
 }
 
 for i = 1, 4 do
-  hl.bind(u.k('SUPER', move.vim[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
-  hl.bind(u.k('SUPER', move.arr[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
-  hl.bind(u.k('SUPER', 'ALT', move.vim[i]), function()
+  hl.bind(u.k(move.vim[i]), function()
+    u.focus_groupaware(move.dir[i])
+  end, { repeating = true })
+  hl.bind(u.k(move.arr[i]), function()
+    u.focus_groupaware(move.dir[i])
+  end, { repeating = true })
+  hl.bind(u.k('CTRL', move.vim[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
+  hl.bind(u.k('CTRL', move.arr[i]), hl.dsp.focus { direction = move.dir[i] }, { repeating = true })
+  hl.bind(u.k('ALT', move.vim[i]), function()
     u.move_groupaware(move.dir[i])
   end)
-  hl.bind(u.k('SUPER', 'ALT', move.arr[i]), function()
+  hl.bind(u.k('ALT', move.arr[i]), function()
     u.move_groupaware(move.dir[i])
   end)
-  hl.bind(u.k('SUPER', 'SHIFT', move.vim[i]), function()
+  hl.bind(u.k('CTRL', 'ALT', move.vim[i]), hl.dsp.window.move { direction = move.dir[i] })
+  hl.bind(u.k('CTRL', 'ALT', move.arr[i]), hl.dsp.window.move { direction = move.dir[i] })
+  hl.bind(u.k('SHIFT', move.vim[i]), function()
     u.translate(i)
   end, { repeating = true })
-  hl.bind(u.k('SUPER', 'SHIFT', move.arr[i]), function()
+  hl.bind(u.k('SHIFT', move.arr[i]), function()
     u.translate(i)
   end, { repeating = true })
 end
@@ -381,17 +397,17 @@ for i = 0, 9 do
   if i < 1 then
     name = 'name:' .. name
   end
-  hl.bind(u.k('SUPER', ws), hl.dsp.focus { workspace = name, on_current_monitor = true })
-  hl.bind(u.k('SUPER', 'ALT', ws), hl.dsp.window.move { workspace = name, follow = false })
+  hl.bind(u.k(ws), hl.dsp.focus { workspace = name, on_current_monitor = true })
+  hl.bind(u.k('ALT', ws), hl.dsp.window.move { workspace = name, follow = false })
 end
-hl.bind(u.k('SUPER', 'Space'), hl.dsp.workspace.toggle_special 's')
-hl.bind(u.k('SUPER', 'ALT', 'Space'), hl.dsp.window.move { workspace = 'special:s' })
+hl.bind(u.k 'Space', hl.dsp.workspace.toggle_special 's')
+hl.bind(u.k('ALT', 'Space'), hl.dsp.window.move { workspace = 'special:s' })
 
 -- Mouse Controls
-hl.bind(u.k('SUPER', 'mouse_down'), hl.dsp.focus { workspace = 'e+1' })
-hl.bind(u.k('SUPER', 'mouse_up'), hl.dsp.focus { workspace = 'e-1' })
-hl.bind(u.k('SUPER', 'mouse:272'), hl.dsp.window.drag(), { mouse = true })
-hl.bind(u.k('SUPER', 'mouse:273'), hl.dsp.window.resize(), { mouse = true })
+hl.bind(u.k 'mouse_down', hl.dsp.focus { workspace = 'e+1' })
+hl.bind(u.k 'mouse_up', hl.dsp.focus { workspace = 'e-1' })
+hl.bind(u.k 'mouse:272', hl.dsp.window.drag(), { mouse = true })
+hl.bind(u.k 'mouse:273', hl.dsp.window.resize(), { mouse = true })
 
 -- Multimedia & Brightness Keys
 hl.bind('XF86AudioRaiseVolume', hl.dsp.exec_cmd 'wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 5%+', { locked = true, repeating = true })
@@ -408,8 +424,8 @@ hl.bind('XF86AudioPrev', hl.dsp.exec_cmd 'playerctl previous', { locked = true }
 
 -- Screenshot & Colorpicking
 hl.bind('Print', hl.dsp.exec_cmd(u.screenshot 'snippet'))
-hl.bind(u.k('SUPER', 'Print'), hl.dsp.exec_cmd(u.screenshot 'select'))
-hl.bind(u.k('ALT', 'Print'), hl.dsp.exec_cmd 'hyprpicker -rau 64 -s 4')
+hl.bind(u.k 'Print', hl.dsp.exec_cmd(u.screenshot 'select'))
+hl.bind('ALT + Print', hl.dsp.exec_cmd 'hyprpicker -rau 64 -s 4')
 
 -- [[ WINDOWS ]]
 hl.window_rule {
@@ -529,10 +545,10 @@ hl.layer_rule {
   no_anim = true,
   match = { namespace = u.rc { 'hyprpicker', 'selection', string.match(startup.background, '[^ ]+') } },
 }
-hl.layer_rule {
-  dim_around = false,
-  match = { namespace = 'waybar' },
-}
+-- hl.layer_rule {
+--   dim_around = false,
+--   match = { namespace = 'waybar' },
+-- }
 
 -- [[ EVENTS ]]
 -- Resizing
@@ -544,17 +560,25 @@ hl.on('window.close', function(win)
   end
 end)
 
--- Track most recent monitors
+-- Track most recent workspace
 hl.on('monitor.focused', function(mon)
   u.wstrack(mon.active_workspace)
+end)
+-- Track most recent window
+hl.on('window.active', function(win, code)
+  if not win.floating and not win.fullscreen and code ~= 16 then
+    u.wintrack(win)
+  end
 end)
 -- Switch wallpapers on workspace switch
 hl.on('workspace.active', function(ws)
   local old = u.wstrack(ws)
-  for _, win in ipairs(ws.get_windows(old)) do
-    if not win.floating then
-      u.runawwwstatic(ws)
-      return
+  if old then
+    for _, win in ipairs(ws.get_windows(old)) do
+      if not win.floating then
+        u.runawwwstatic(ws)
+        return
+      end
     end
   end
   local step = u.secs2step(transstep, ws.monitor.refresh_rate)
@@ -563,10 +587,12 @@ hl.on('workspace.active', function(ws)
 end)
 hl.on('workspace.move_to_monitor', function(ws, mon)
   local old = u.montrack(ws)
-  for _, win in ipairs(ws.get_windows(old.active_workspace)) do
-    if not win.floating then
-      u.runawwwstatic(ws)
-      return
+  if old then
+    for _, win in ipairs(ws.get_windows(old.active_workspace)) do
+      if not win.floating then
+        u.runawwwstatic(ws)
+        return
+      end
     end
   end
   local step = u.secs2step(transstep, mon.refresh_rate)

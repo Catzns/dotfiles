@@ -164,7 +164,7 @@ vim.keymap.set({ 'n', 'x' }, '<leader>tl', function()
   vim.o.relativenumber = not vim.o.relativenumber
   vim.o.signcolumn = (vim.o.signcolumn == 'yes' and 'no') or 'yes'
   vim.o.foldcolumn = (vim.o.foldcolumn == '1' and '0') or '1'
-end, { desc = 'Toggle [l]ine Columns' })
+end, { desc = 'Toggle [l]ine Numbers' })
 vim.keymap.set({ 'n', 'x' }, '<leader>tv', function()
   local lines = not vim.g.virtual_lines
   vim.g.virtual_lines = lines
@@ -172,6 +172,9 @@ vim.keymap.set({ 'n', 'x' }, '<leader>tv', function()
     virtual_lines = lines,
   }
 end, { desc = 'Toggle [v]irtual Lines' })
+vim.keymap.set({ 'n', 'x' }, '<leader>td', function()
+  vim.diagnostic.enable(not vim.diagnostic.is_enabled { bufnr = 0 }, { bufnr = 0 })
+end, { desc = 'Toggle [d]iagnostics' })
 
 -- [[ DIAGNOSTICS ]]
 vim.diagnostic.config {
@@ -242,7 +245,6 @@ vim.api.nvim_create_autocmd('LspAttach', {
         },
       },
     })
-    -- client:notify('workspace/didChangeConfiguration', { settings = client.settings })
   end,
 })
 
@@ -257,6 +259,7 @@ vim.lsp.enable {
   'jsonls',
   'yamlls',
   'dockerls',
+  'qmlls',
 }
 
 -- [[ AUTOCOMMANDS ]]
@@ -353,6 +356,7 @@ require('lazy').setup {
             'yaml-language-server',
             'dockerfile-language-server',
             'clangd',
+            'qmlls',
 
             --Formatters
             'prettier',
@@ -392,6 +396,7 @@ require('lazy').setup {
       'nvim-treesitter/nvim-treesitter',
       branch = 'main',
       lazy = false,
+      enabled = false,
       build = ':TSUpdate',
       config = function()
         local parsers = {
@@ -414,15 +419,30 @@ require('lazy').setup {
           'bash',
           'regex',
         }
+        local filetypes = {}
         require('nvim-treesitter').install(parsers)
         vim.api.nvim_create_autocmd('FileType', {
-          pattern = parsers,
+          pattern = vim.tbl_deep_extend('force', parsers, filetypes),
           callback = function()
             vim.treesitter.start()
             vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
             vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
           end,
         })
+      end,
+    },
+
+    {
+      'arborist-ts/arborist.nvim',
+      lazy = false,
+      config = function()
+        require('arborist').setup {
+          prefer_wasm = false,
+          ignore = {
+            'bigfile',
+          },
+        }
+        vim.wo.foldexpr = 'v:lua.vim.treesitter.foldexpr()'
       end,
     },
 
@@ -451,6 +471,7 @@ require('lazy').setup {
             vue = { 'prettier' },
             json = { 'prettier' },
             yaml = { 'prettier' },
+            qml = { 'qmlformat' },
           },
           formatters = {},
           default_format_opts = {
