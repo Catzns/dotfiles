@@ -153,6 +153,8 @@ hl.on('hyprland.start', function()
   for _, program in pairs(startup) do
     hl.exec_cmd(program)
   end
+  -- Temporary fix because screensharing shit the bed
+  hl.exec_cmd 'systemctl --user restart xdg-desktop-portal xdg-desktop-portal-hyprland'
   hl.config { misc = { initial_workspace_tracking = tracking } }
 end)
 
@@ -272,7 +274,7 @@ hl.config {
   },
 
   misc = {
-    vrr = 3,
+    -- vrr = 2,
 
     font_family = 'Inter, Sans',
 
@@ -328,6 +330,7 @@ hl.bind(u.k 'S', function()
 end, { desc = 'Swap / Shrink' })
 hl.bind(u.k 'D', hl.dsp.exec_cmd(apps.files), { desc = '[D]irectory' })
 hl.bind(u.k 'F', hl.dsp.window.float(), { desc = '[F]loat' })
+hl.bind(u.k('ALT', 'F'), hl.dsp.window.fullscreen { mode = 'fullscreen', action = 'toggle' })
 hl.bind(u.k 'Z', hl.dsp.group.toggle(), { desc = '[Z]ip' })
 hl.bind(u.k 'X', hl.dsp.window.close(), { desc = 'e[X]it' })
 hl.bind(u.k 'C', function()

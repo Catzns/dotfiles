@@ -2,9 +2,11 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
+import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
+import Quickshell.Widgets
 
 ShellRoot {
     id: root
@@ -85,7 +87,6 @@ ShellRoot {
         ], i: "󰖯" }
     ]
     // qmlformat on
-
     readonly property color cFgLabel: "#c0caf5"
     readonly property color cFgText: "#a9b1d6"
     readonly property color cFgComment: "#565f89"
@@ -109,8 +110,6 @@ ShellRoot {
     readonly property real borderBig: 6
     readonly property real borderSize: 2
 
-    property bool powerMenuVisible: false
-
     readonly property font fontText: ({
             family: "JetBrainsMono NFP",
             pointSize: 13,
@@ -120,6 +119,70 @@ ShellRoot {
             family: "JetBrainsMono NFP",
             pointSize: 13
         })
+
+    // QtObject {
+    //     id: hyprlandModel
+    //     property var workspaces: []
+    //     property var workspacesMap: ({})
+    //     property var workspaceActive: ({})
+    //     property var workspacePrevious: ({})
+    //
+    //     property Process getWorkspaces: Process {
+    //         command: ["hyprctl", "workspaces", "-j"]
+    //         stdout: StdioCollector {
+    //             id: workspacesCollect
+    //             onStreamFinished: {
+    //                 hyprlandModel.workspaces = JSON.parse(workspacesCollect.text).filter(entry => !isNaN(entry.name)).sort((a, b) => Math.abs(a.id) - Math.abs(b.id));
+    //                 for (let i = 0; i < hyprlandModel.workspaces.length; i++) {
+    //                     let ws = hyprlandModel.workspaces[i];
+    //                     ws.windows = [];
+    //                     hyprlandModel.workspacesMap[Math.abs(ws.id)] = ws;
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     property Process getWindows: Process {
+    //         command: ["hyprctl", "clients", "-j"]
+    //         stdout: StdioCollector {
+    //             id: windowsCollect
+    //             onStreamFinished: {
+    //                 let windows = JSON.parse(windowsCollect.text);
+    //                 for (let i = 0; i < windows.length; i++) {
+    //                     let wsp = windows[i].workspace;
+    //                     hyprlandModel.workspacesMap[wsp.id].windows[i] = windows[i];
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     property Process getActiveWorkspace: Process {
+    //         command: ["hyprctl", "activeworkspace", "-j"]
+    //         stdout: StdioCollector {
+    //             id: activeCollect
+    //             onStreamFinished: {
+    //                 let wsp = JSON.parse(activeCollect);
+    //                 hyprlandModel.workspaceActive = hyprlandModel.workspacesMap[Math.abs(wsp.id)];
+    //             }
+    //         }
+    //     }
+    //
+    //     function updateWorkspaces() {
+    //         getWorkspaces.running = true;
+    //     }
+    //
+    //     function updateActiveWorkspace() {
+    //         getActiveWorkspace.running = true;
+    //     }
+    //
+    //     function updateWindows() {
+    //         getWindows.running = true;
+    //     }
+    //
+    //     function updateAll() {
+    //         updateWorkspaces();
+    //         updateActiveWorkspace();
+    //         updateWindows();
+    //     }
+    // }
 
     ScriptModel {
         id: wspsModel
@@ -165,9 +228,12 @@ ShellRoot {
                 PanelWindow {
                     id: bar
                     property bool animated: false
+                    property bool powerMenuVisible: false
+
                     screen: barLoad.modelData
                     exclusionMode: ExclusionMode.Ignore
                     color: "transparent"
+                    aboveWindows: powerMenuVisible
 
                     anchors {
                         left: true
@@ -181,7 +247,10 @@ ShellRoot {
                             item: barContainer
                         }
                         Region {
-                            item: root.powerMenuVisible ? powerMenuLoad : null
+                            item: bar.powerMenuVisible ? powerMenuLoad : null
+                        }
+                        Region {
+                            item: appLauncherLoad
                         }
                     }
 
@@ -195,6 +264,7 @@ ShellRoot {
                         screen: barLoad.modelData
                         implicitHeight: 26
                         color: "transparent"
+                        aboveWindows: false
                     }
 
                     Rectangle {
@@ -475,7 +545,7 @@ ShellRoot {
                                 anchors {
                                     top: parent.top
                                     right: exeButton.left
-                                    rightMargin: root.spacing * 3
+                                    rightMargin: root.spacing * 4
                                 }
                                 text: Qt.formatDate(clock.date, "ddd, MMM dd")
                                 font: root.fontText
@@ -496,7 +566,7 @@ ShellRoot {
                                 property string text: Qt.formatTime(clock.date, "hh:mm AP")
                                 anchors {
                                     left: exeButton.right
-                                    leftMargin: root.spacing * 3
+                                    leftMargin: root.spacing * 4
                                     bottom: parent.bottom
                                     top: parent.top
                                 }
@@ -576,14 +646,14 @@ ShellRoot {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: {
-                                    root.powerMenuVisible ? powerMenuLoad.item.close(bar.animated) : root.powerMenuVisible = true;
+                                    bar.powerMenuVisible ? powerMenuLoad.item.close(bar.animated) : bar.powerMenuVisible = true;
                                 }
                             }
                         }
 
                         Timer {
                             running: true
-                            interval: 50
+                            interval: 25
                             onTriggered: {
                                 bar.animated = true;
                             }
@@ -591,14 +661,115 @@ ShellRoot {
                     }
 
                     Loader {
+                        id: appLauncherLoad
+                        active: true
+                        anchors {
+                            horizontalCenter: barContainer.horizontalCenter
+                            top: barContainer.top
+                        }
+                        sourceComponent: Component {
+                            Rectangle {
+                                id: appLauncher
+                                readonly property point pos: appLauncher.mapFromItem(barFill, x, barFill.height)
+                                width: 384
+                                height: barLoad.modelData.height * (2 / 3)
+                                color: root.cBgLight
+
+                                radius: root.borderBig
+                                border.width: root.borderSize
+                                border.color: root.cBorder
+
+                                ScrollView {
+                                    anchors {
+                                        fill: parent
+                                        margins: root.borderSize
+                                        bottomMargin: root.borderBig
+                                        topMargin: barContainer.height + root.borderBig
+                                    }
+
+                                    ScrollBar.vertical.contentItem: Rectangle {
+                                        id: scrollBar
+                                        implicitWidth: 6
+                                        radius: 3
+                                        color: root.cBorder
+                                    }
+
+                                    ListView {
+                                        id: appList
+                                        anchors.fill: parent
+                                        spacing: root.spacing
+                                        clip: true
+                                        model: ScriptModel {
+                                            values: [...DesktopEntries.applications.values].sort((a, b) => a.name.localeCompare(b.name))
+                                        }
+                                        delegate: MouseArea {
+                                            id: appEntry
+                                            required property var modelData
+                                            anchors {
+                                                left: parent.left
+                                                right: parent.right
+                                            }
+                                            height: 32
+                                            Rectangle {
+                                                anchors.fill: parent
+                                                color: "grey"
+                                            }
+                                            // Row {
+                                            //     IconImage {
+                                            //         implicitSize: 32
+                                            //         source: Quickshell.iconPath(modelData.icon)
+                                            //     }
+                                            //     Text {
+                                            //         anchors.verticalCenter: parent.verticalCenter
+                                            //         font: root.fontText
+                                            //         text: appEntry.modelData.name
+                                            //         color: root.cFgLabel
+                                            //         leftPadding: root.spacing * 2
+                                            //     }
+                                            // }
+                                        }
+                                    }
+                                }
+
+                                RadiusConcave {
+                                    anchors {
+                                        right: appLauncher.left
+                                        rightMargin: -root.borderSize
+                                    }
+                                    size: root.borderBig
+                                    borderWidth: root.borderSize
+                                    fillColor: root.cBgLight
+                                    strokeColor: root.cBorder
+
+                                    state: "tr"
+                                    y: Math.min(appLauncher.pos.y, appLauncher.height - appLauncher.radius - height)
+                                }
+
+                                RadiusConcave {
+                                    anchors {
+                                        left: appLauncher.right
+                                        leftMargin: -root.borderSize
+                                    }
+                                    size: root.borderBig
+                                    borderWidth: root.borderSize
+                                    fillColor: root.cBgLight
+                                    strokeColor: root.cBorder
+
+                                    state: "tl"
+                                    y: Math.min(appLauncher.pos.y, appLauncher.height - appLauncher.radius - height)
+                                }
+                            }
+                        }
+                    }
+
+                    Loader {
                         id: powerMenuLoad
-                        property bool expanded: false
                         anchors {
                             top: barContainer.top
                             right: barContainer.right
                             rightMargin: root.borderBig * 2
                         }
-                        active: root.powerMenuVisible
+                        active: bar.powerMenuVisible
                         // active: true
                         sourceComponent: Component {
                             Rectangle {
@@ -615,7 +786,7 @@ ShellRoot {
                                     anchors.bottom: powerMenu.bottom
                                     padding: root.spacing + powerMenu.border.width / 2
                                     topPadding: root.spacing
-                                    spacing: root.spacing
+                                    // spacing: root.spacing
                                     Repeater {
                                         id: itemsRepeat
                                         model: [
@@ -640,34 +811,52 @@ ShellRoot {
                                                 process: procShutdown
                                             },
                                         ]
-                                        Rectangle {
-                                            id: optionBtnVis
+                                        MouseArea {
+                                            id: optionBtn
                                             required property var modelData
+                                            required property int index
+                                            readonly property bool first: index === 0
+                                            readonly property bool last: index === itemsRepeat.count - 1
+                                            readonly property real space: 6
                                             width: 64
-                                            height: 64
-                                            radius: root.borderSml
-                                            color: root.btnFindColor(optionBtn.containsPress, optionBtn.containsMouse || focus)
-
-                                            Text {
-                                                anchors.centerIn: parent
-                                                font {
-                                                    family: root.fontLabel.family
-                                                    pixelSize: 48
-                                                }
-                                                text: parent.modelData.icon
-                                                style: Text.Raised
-                                                color: parent.modelData.color
+                                            height: first || last ? width + space / 2 : width + space
+                                            hoverEnabled: true
+                                            onClicked: {
+                                                modelData.process.running = true;
+                                                powerMenu.close(false);
                                             }
+                                            Rectangle {
+                                                id: optionBtnVis
+                                                anchors {
+                                                    left: parent.left
+                                                    right: parent.right
+                                                    bottom: optionBtn.last ? parent.bottom : undefined
+                                                    top: optionBtn.first ? parent.top : undefined
+                                                    verticalCenter: !optionBtn.first && !optionBtn.last ? parent.verticalCenter : undefined
+                                                }
+                                                height: 64
+                                                radius: root.borderSml
+                                                color: root.btnFindColor(optionBtn.containsPress, optionBtn.containsMouse)
 
-                                            MouseArea {
-                                                id: optionBtn
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                onClicked: {
-                                                    parent.modelData.process.running = true;
-                                                    powerMenu.close(false);
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    font {
+                                                        family: root.fontLabel.family
+                                                        pixelSize: 48
+                                                    }
+                                                    text: optionBtn.modelData.icon
+                                                    style: Text.Raised
+                                                    color: optionBtn.modelData.color
                                                 }
                                             }
+                                        }
+                                    }
+                                }
+
+                                HoverHandler {
+                                    onHoveredChanged: {
+                                        if (!hovered) {
+                                            powerMenu.close(bar.animated);
                                         }
                                     }
                                 }
@@ -675,10 +864,10 @@ ShellRoot {
                                 RadiusConcave {
                                     anchors {
                                         right: powerMenu.left
-                                        rightMargin: -2
+                                        rightMargin: -root.borderSize
                                     }
-                                    size: 6
-                                    borderWidth: 2
+                                    size: root.borderBig
+                                    borderWidth: root.borderSize
                                     fillColor: root.cBgLight
                                     strokeColor: root.cBorder
 
@@ -689,10 +878,10 @@ ShellRoot {
                                 RadiusConcave {
                                     anchors {
                                         left: powerMenu.right
-                                        leftMargin: -2
+                                        leftMargin: -root.borderSize
                                     }
-                                    size: 6
-                                    borderWidth: 2
+                                    size: root.borderBig
+                                    borderWidth: root.borderSize
                                     fillColor: root.cBgLight
                                     strokeColor: root.cBorder
 
@@ -715,7 +904,7 @@ ShellRoot {
                                     from: barContainer.height + items.height
                                     to: barContainer.height
 
-                                    onFinished: root.powerMenuVisible = false
+                                    onFinished: bar.powerMenuVisible = false
                                 }
 
                                 function open(animated) {
@@ -730,7 +919,7 @@ ShellRoot {
                                         powerMenuClose.start();
                                     else {
                                         implicitHeight = barContainer.height;
-                                        root.powerMenuVisible = false;
+                                        bar.powerMenuVisible = false;
                                     }
                                 }
                             }
