@@ -1,0 +1,6 @@
+zshrc	~/.zshrc
+kitty.conf  ~/.config/kitty/kitty.conf
+btop.conf   ~/.config/btop/btop.conf
+yazi-theme.toml	~/.config/yazi/theme.toml
+nvim.lua    ~/.config/nvim/init.lua
+.stylua.toml	~/.config/nvim/.stylua.toml ~/.config/hypr/.stylua.toml

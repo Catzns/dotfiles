@@ -6,8 +6,8 @@ local alphas = {
 local M = {}
 
 -- [[ TYPES ]]
----@alias selections { c: string?, t: string? }[]
----@alias resizes { c: string?, t: string?, x: integer?, y: integer? }[]
+-- @alias selections { c: string?, t: string? }[]
+-- @alias resizes { c: string?, t: string?, x: integer?, y: integer? }[]
 
 -- [[ GENERIC ]]
 ---@param value number

@@ -1,0 +1,18 @@
+waybar.jsonc	~/.config/waybar/config.jsonc
+waybar.css	~/.config/waybar/style.css
+swaync.json	~/.config/swaync.config.json
+swaync.css	~/.config
+
+hypr/land.lua	~/.config/hypr/land/vars.lua
+hypr/land/main.lua	~/.config/hypr/hyprland.lua
+hypr/land/binds.lua	~/.config/hypr/land/binds.lua
+hypr/land/config.lua	~/.config/hypr/land/config.lua
+hypr/land/events.lua	~/.config/hypr/land/events.lua
+hypr/land/monitors.lua	~/.config/hypr/land/monitors.lua
+hypr/land.rules.lua	~/.config/hypr/land/rules.lua
+hypr/land/utils/aesthetics.lua	~/.config/hypr/land/utils/aesthetics.lua
+hypr/land/utils/binds.lua	~/.config/hypr/land/utils/binds.lua
+hypr/land/utils/regex.lua	~/.config/hypr/land/utils/regex.lua
+hypr/land/utils/rules.lua	~/.config/hypr/land/utils/rules.lua
+hypr/land/utils/scripts.lua	~/.config/hypr/land/utils/scripts.lua
+hypr/land/utils/tracking.lua	~/.config/hypr/land/utils/tracking.lua
