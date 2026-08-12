@@ -1,4 +1,4 @@
-local v = require 'land.vars'
+local v = require 'land.variables'
 local r = require 'land.utils.regex'
 local R = require 'land.utils.rules'
 local m = require 'land.monitors'
@@ -87,12 +87,14 @@ hl.workspace_rule {
   default = true,
   persistent = true,
 }
-hl.workspace_rule {
-  workspace = 'name:0',
-  monitor = m[#m].output,
-  default = true,
-  persistent = true,
-}
+if #m > 1 then
+  hl.workspace_rule {
+    workspace = 'name:0',
+    monitor = m[#m].output,
+    default = true,
+    persistent = true,
+  }
+end
 local j = 9
 for i = #m - 1, 2, -1 do
   hl.workspace_rule {

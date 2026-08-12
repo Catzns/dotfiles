@@ -2,7 +2,7 @@
 ---@alias selections { c: string?, t: string? }[]
 ---@alias resizes { c: string?, t: string?, x: integer?, y: integer? }[]
 
-local v = require 'land.vars'
+local v = require 'land.variables'
 require 'land.monitors'
 require 'land.config'
 require 'land.binds'

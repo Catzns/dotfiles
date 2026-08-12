@@ -1,4 +1,4 @@
-local v = require 'land.vars'
+local v = require 'land.variables'
 local b = require 'land.utils.binds'
 local s = require 'land.utils.scripts'
 local k = b.k

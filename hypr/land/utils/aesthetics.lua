@@ -1,4 +1,4 @@
-local v = require 'land.vars'
+local v = require 'land.variables'
 local AESTHETIC = {}
 
 -- Convenience function for gradient syntax

@@ -1,4 +1,6 @@
 local r = require 'land.utils.regex'
+local v = require 'land.variables'
+local track = require 'land.utils.tracking'
 local RULES = {}
 
 ---@param name string
@@ -39,5 +41,34 @@ function RULES.buildrules(name, selections)
     }
   end
 end
+
+hl.on('window.open', function(win)
+  local old = track.window_active(win)
+  if not old or win.workspace.windows < 2 then
+    return
+  end
+  local dist = win.monitor.width / 20
+  local mid = win.monitor.width / 2
+  for _, resize in pairs(v.resizes) do
+    local c = string.match(win.class, string.format('^%s$', resize.c))
+    local t = string.match(win.title, string.format('^%s$', resize.t))
+    if (not c == not resize.c) and (not t == not resize.t) then
+      local rx = resize.x
+      local ry = resize.y
+      if rx and old.at.x < win.at.x then
+        rx = -rx
+      end
+      if ry and old.at.y < win.at.y then
+        ry = -ry
+      end
+      hl.dispatch(hl.dsp.window.resize {
+        x = rx and (mid + dist * rx) or win.size.x,
+        y = ry and (mid + dist * ry) or win.size.y,
+        window = win,
+      })
+      return
+    end
+  end
+end)
 
 return RULES

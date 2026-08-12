@@ -1,4 +1,4 @@
-local v = require 'land.vars'
+local v = require 'land.variables'
 local gradient = require('land.utils.aesthetics').gradient
 
 -- [[ AESTHETICS ]]
@@ -98,6 +98,8 @@ hl.config {
     touchpad = {
       natural_scroll = true,
     },
+
+    kb_options = 'caps:escape',
   },
 
   cursor = {

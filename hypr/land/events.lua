@@ -1,4 +1,4 @@
-local v = require 'land.vars'
+local v = require 'land.variables'
 local a = require 'land.utils.aesthetics'
 local track = require 'land.utils.tracking'
 
