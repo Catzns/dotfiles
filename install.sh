@@ -1,20 +1,24 @@
 #!/usr/bin/env bash
 set -e
 
+REPO=$(dirname $(realpath $0))
+ROOTNAME="meta"
+BACKUPNAME="dotfiles"
+
 BOOTSTRAP=false
 EVERYTHING=false
 DRYRUN=false
-declare -A PROFILES
-declare -A LINKS
-declare -A PACKAGES
-declare -A SCRIPTS
+PROFILES=()
+FLINKS=()
+FPACKAGES=()
+FSCRIPTS=()
 
 function usage {
    local MSG="   USAGE: ./install PROFILE [...] [--bootstrap]
 
-   PROFILES: basic | base | b
-             graphical | gui | g
-             applications | apps | a
+   PROFILES: base | basic | b
+             gui | graphical | g
+             apps | applications | a
              [CUSTOM...]
 
    ARGUMENTS:
@@ -36,27 +40,48 @@ function usage {
    exit $1
 }
 
+function expand-home {
+   printf "${1/\~/$HOME}"
+}
+
+function compress-home {
+   printf "${1/$HOME/\~}"
+}
+
+function has-pkg {
+   # Convenience function to check for a package manager with more minimal syntax.
+   if command -v "$1" &>/dev/null; then
+      return 0
+   else
+      return 1
+   fi
+}
+
+function parse-opt {
+   case $1 in
+      b | --bootstrap) BOOTSTRAP=true ;;
+      e | --everything) EVERYTHING=true ;;
+      d | --dry-run) DRYRUN=true ;;
+      h | --help) usage 0 ;;
+      *)
+         printf "Invalid option: $1\n"
+         usage 1 ;;
+   esac
+}
+
 function parse-args {
    while [[ $1 != "" ]]; do
       local ARG=$1
       case $ARG in
-         basic | base | b) PROFILES[.]=true ;;
-         graphical | gui | g) PROFILES[./gui]=true ;;
-         applications | apps | a) PROFILES[./apps]=true ;;
+         basic | base | b) PROFILES+=(".") ;;
+         graphical | gui | g) PROFILES+=("./gui") ;;
+         applications | apps | a) PROFILES+=("./apps") ;;
          --) local OPTEND=true ;;
          --*)
             if [ -v OPTEND ]; then
                PROFILES[$ARG]=true
             else
-               case $ARG in
-                  --bootstrap) BOOTSTRAP=true ;;
-                  --everything) EVERYTHING=true ;;
-                  --dry-run) DRYRUN=true ;;
-                  --help) usage 0 ;;
-                  *)
-                     printf "Invalid option: $ARG\n"
-                     usage 1 ;;
-               esac
+               parse-opt $ARG
             fi ;;
          -*)
             if [ -v OPTEND ]; then
@@ -64,15 +89,7 @@ function parse-args {
             else
                for ((i = 1; i < ${#ARG}; i++)); do
                   local OPT=${ARG:$i:1}
-                  case $OPT in
-                     b) BOOTSTRAP=true ;;
-                     e) EVERYTHING=true ;;
-                     d) DRYRUN=true ;;
-                     h) usage 0 ;;
-                     *)
-                        printf "Invalid option: -$OPT\n"
-                        usage 1 ;;
-                  esac
+                  parse-opt $OPT
                done
             fi ;;
          *)
@@ -87,34 +104,76 @@ function fill-from-dirs {
          local path=$(realpath "$file")
          file=$(basename $file)
          case $file in
-            links.tsv) LINKS[$path]="1" ;;
-            packages.tsv) PACKAGES[$path]="1" ;;
-            bootstrap*) SCRIPTS[$path]="1" ;;
+            links.tsv) FLINKS+=("$path") ;;
+            packages.tsv) FPACKAGES+=("$path") ;;
+            bootstrap*) [ -x "$path" ] && FSCRIPTS+=("$path") ;;
          esac
       done <<< $(find "$@" -maxdepth 1 -type f)
 }
 
-function has-pkg {
-   # Convenience function to check for a package manager with more minimal syntax.
-   if command -v "$1" &>/dev/null; then
-      return 0
+function archive-old-files {
+   if [ -n $XDG_STATE_HOME ]; then
+      local DATAHOME="$XDG_STATE_HOME/$BACKUPNAME"
    else
-      return 1
+      local DATAHOME="$HOME/.$BACKUPNAME.bak"
    fi
+   mkdir -p "$DATAHOME"
+   printf "Backing up to $(compress-home $DATAHOME):\n"
+   while IFS=$'\t'$'\n' read -ra LINE; do
+      for TARGET in "${LINE[@]:1}"; do
+         local ARCHIVE=${TARGET#\~/}
+         TARGET=$(expand-home $TARGET)
+         if (! [ -L "$TARGET" ]) && [ -f "$TARGET" ] || [ -d "$TARGET" ]; then
+            printf "   - $ARCHIVE\n"
+            if ! $DRYRUN; then
+               mkdir -p $(dirname "$ARCHIVE")
+               cp -r "$TARGET" "$DATAHOME/$ARCHIVE"
+            fi
+            break
+         fi
+      done
+   done < <(cat ${FLINKS[@]})
+   printf "\n"
+}
+
+function build-symlinks {
+   for LINK in "${FLINKS[@]}"; do
+      local name=$(basename $(dirname $LINK))
+      name=${name/$ROOTNAME/base}
+      printf "Linking profile '$name' to $HOME/...\n"
+      while IFS=$'\t'$'\n' read -ra LINE; do
+         [ -z $LINE ] && continue
+         local TARGET="${LINE[0]}"
+         (! [ -f "$TARGET" ]) || [ -L "$TARGET" ] && continue
+         for DEST in "${LINE[@]:1}"; do
+            printf "   - $TARGET to $DEST\n"
+            DEST=$(expand-home "$DEST")
+            local DIR=$(dirname "$DEST")
+            if ! $DRYRUN; then
+               mkdir -p "$DIR"
+               ln -srf "$TARGET" "$DEST"
+            fi
+         done
+      done < $LINK
+      printf "\n"
+   done
 }
 
 function install-per-pm {
+   local pkgs
+   local amount
    if has-pkg "pacman"; then
-      if [ -n "${!PACKAGES[*]}" ]; then
-         local pkgs=$(comm -12 <(pacman -Slq | sort) <(sort <<< $(tr "\t" "\n" <<< $(cat "${!PACKAGES[@]}"))))
-         local amount=$(pacman -Sp --needed $pkgs)
+      if [ -n "${FPACKAGES[*]}" ]; then
+         pkgs=$(comm -23 <(pacman -Sql | sort) <(pacman -Qqe | sort))
+         pkgs=$(comm -12 <(sort <<< $(tr "\t " "\n\n" <<< $(cat "${FPACKAGES[@]}"))) <(printf "%s\n" "${pkgs[@]}"))
+         amount=$(pacman -Sp --needed $pkgs)
          if [ -z "$amount" ]; then return; fi
+
          amount=$(wc -l <<< $amount)
+         printf "Installing $amount packages with pacman:\n"
          if $DRYRUN; then
-            printf "Pretending to install $amount packages:\n"
-            pacman -S --needed --print-format "   %r/%n-%v" $pkgs
+            pacman -S --needed --print-format "   - %r/%n-%v" $pkgs
          else
-            printf "Installing $amount packages:\n"
             sudo pacman -S --needed $pkgs
          fi
       fi
@@ -126,40 +185,39 @@ function install-per-pm {
 }
 
 function run-scripts {
-   local scripts="${!SCRIPTS[@]}"
-   if [ -n "${!SCRIPTS[*]}" ]; then
+   if [ -z "${FSCRIPTS[*]}" ]; then
+      return
+   fi
+   if ! $DRYRUN; then
       printf "You are about to run the following scripts:\n"
-      printf "   - %s\n" $scripts
-      if ! $DRYRUN; then
-         printf "\nThis could cause unwanted changes. "
-         while printf "Proceed? [y/n]: " && read -r -n 1 answer; do
-            printf "\n"
-            if [ "$answer" = 'n' ]; then
-               return
-            elif
-               [ "$answer" = 'y' ]; then
-               break
-            else
-               printf "Answer must be 'y' or 'n'. "
-            fi
-         done
-      fi
-      for script in $scripts; do
-            printf "Evaluating %s...\n" "$script"
-         if $DRYRUN; then
-            return
+      for script in "${FSCRIPTS[@]}"; do
+         printf "   - %s\n" $(compress-home $script)
+      done
+      printf "\nThis could cause unwanted changes. "
+      while printf "Proceed? [y/n]: " && read -r -n 1 answer; do
+         printf "\n"
+         if [ "$answer" = 'n' ]; then
+            printf "Bootstrap aborted."
+            exit 0
+         elif
+            [ "$answer" = 'y' ]; then
+            break
          else
-            eval $script
+            printf "Answer must be 'y' or 'n'. "
          fi
       done
+      printf "\n"
    fi
+   for script in "${FSCRIPTS[@]}"; do
+      printf "Evaluating %s...\n" "$script"
+      if ! $DRYRUN; then
+         eval $script
+      fi
+   done
+   printf "\n"
 }
 
-function build-symlinks {
-   echo "${!LINKS[*]}"
-}
-
-cd "$(dirname $(realpath $0))/meta"
+cd "$REPO/$ROOTNAME"
 parse-args "$@"
 
 if (! $EVERYTHING) && [ ${#PROFILES[@]} -eq 0 ]; then
@@ -167,56 +225,14 @@ if (! $EVERYTHING) && [ ${#PROFILES[@]} -eq 0 ]; then
 fi
 
 if $EVERYTHING; then
-   PROFILES="*"
-   echo "$PROFILES"
-   exit 0
+   fill-from-dirs "." */
+else
+   fill-from-dirs "${PROFILES[@]}"
 fi
 
-fill-from-dirs "${!PROFILES[@]}"
+cd "$REPO"
+
+archive-old-files
+build-symlinks
 install-per-pm
 run-scripts
-build-symlinks
-
-# fill-from-dir "$ROOT"
-# fill-depth-1 "$ROOT"
-# printf "%s\n" "${!PROFILES[@]}"
-# printf "%s\n" "${!LINKS[@]}"
-# printf "%s\n" "${!PACKAGES[@]}"
-# printf "%s\n" "${!SCRIPTS[@]}"
-
-# #!/usr/bin/env bash
-# set -euo pipefail
-#
-# read -p "This will symlink every .dotfile listed in the LINKS file. Proceed? (Y\N) " resp
-# if [[ $resp != [Yy]* ]] then
-# 	exit 1
-# fi
-#
-# dotfiles_dir=$(dirname $(realpath $0))
-#
-# while read -r entry; do
-# # Exclude empty lines
-# 	if [[ -z $entry ]] then
-# 		continue
-# 	fi
-#
-# # Intermediary variables
-# 	link=${entry%	*}
-# 	path=${entry#*	}
-# 	path=$(printf "%s" "$path" | sed "s|~|$HOME|")
-# 	dir=$(dirname "$path")
-#
-# 	if ! [[ -f "$dotfiles_dir/$link" ]] then
-# 		printf "%s\n" "File '$link' not present, skipping..."
-# 		continue
-# 	fi
-#
-# # Make target directory, then create link & overwrite existing file
-# 	if ! [[ -d $path ]]; then
-# 		mkdir -p "$dir"
-# 	fi
-# 	ln -sf "$dotfiles_dir/$link" "$path"
-# 	printf "%s\n" "'$link' successfully linked..."
-# done < "$dotfiles_dir/LINKS"
-#
-# printf "%s\n" "Installation complete!"
