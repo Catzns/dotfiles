@@ -1,8 +1,9 @@
-waybar.jsonc	~/.config/waybar/config.jsonc
+waybar.json	~/.config/waybar/config.jsonc
 waybar.css	~/.config/waybar/style.css
 swaync.json	~/.config/swaync/config.json
 swaync.css	~/.config/swaync/style.css
 
-hypr/land.lua	~/.config/hypr/land/variables.lua
 hypr/land/init.lua	~/.config/hypr/hyprland.lua
-hypr/land/	~/.config/hypr/land/
+hypr/land/	~/.config/hypr/land
+hypr/idle.conf	~/.config/hypr/hypridle.conf
+hypr/lock.conf	~/.config/hypr/hyprlock.conf

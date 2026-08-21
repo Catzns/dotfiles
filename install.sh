@@ -123,7 +123,7 @@ function archive-old-files {
       for TARGET in "${LINE[@]:1}"; do
          local ARCHIVE=${TARGET#\~/}
          TARGET=$(expand-home $TARGET)
-         if (! [ -L "$TARGET" ]) && [ -f "$TARGET" ] || [ -d "$TARGET" ]; then
+         if [ -f "$TARGET" ] || [ -d "$TARGET" ] && ! [ -L "$TARGET" ]; then
             printf "   - $ARCHIVE\n"
             if ! $DRYRUN; then
                mkdir -p $(dirname "$ARCHIVE")
@@ -144,7 +144,7 @@ function build-symlinks {
       while IFS=$'\t'$'\n' read -ra LINE; do
          [ -z $LINE ] && continue
          local TARGET="${LINE[0]}"
-         (! [ -f "$TARGET" ]) || [ -L "$TARGET" ] && continue
+         [ -L "$TARGET" ] || ! [ -f "$TARGET" ] && ! [ -d "$TARGET" ] && continue
          for DEST in "${LINE[@]:1}"; do
             printf "   - $TARGET to $DEST\n"
             DEST=$(expand-home "$DEST")
@@ -166,9 +166,8 @@ function install-per-pm {
       if [ -n "${FPACKAGES[*]}" ]; then
          pkgs=$(comm -23 <(pacman -Sql | sort) <(pacman -Qqe | sort))
          pkgs=$(comm -12 <(sort <<< $(tr "\t " "\n\n" <<< $(cat "${FPACKAGES[@]}"))) <(printf "%s\n" "${pkgs[@]}"))
+         if [ -z "$pkgs" ]; then return; fi
          amount=$(pacman -Sp --needed $pkgs)
-         if [ -z "$amount" ]; then return; fi
-
          amount=$(wc -l <<< $amount)
          printf "Installing $amount packages with pacman:\n"
          if $DRYRUN; then
@@ -185,7 +184,7 @@ function install-per-pm {
 }
 
 function run-scripts {
-   if [ -z "${FSCRIPTS[*]}" ]; then
+   if [ -z "${FSCRIPTS[*]}" ] || ! $BOOTSTRAP; then
       return
    fi
    if ! $DRYRUN; then
@@ -236,3 +235,4 @@ archive-old-files
 build-symlinks
 install-per-pm
 run-scripts
+printf "Installation complete!\n"
